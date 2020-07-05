@@ -37,6 +37,7 @@ var w WatchLogs
 // Usage of cli
 func Usage() string {
 	msg := `
+Version v1.0.0
 --help
         Prints this Usage
 --limit int
@@ -72,6 +73,11 @@ func main() {
 	regexps := flag.Args()
 
 	if *help == true {
+		fmt.Println(Usage())
+		os.Exit(2)
+	}
+
+	if *watchFile == "" {
 		fmt.Println(Usage())
 		os.Exit(2)
 	}
