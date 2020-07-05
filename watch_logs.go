@@ -50,14 +50,14 @@ Version v1.0.0
         Shell cmd to execute on match found (default "")
 
 Basic Usage:
-        watch_logs --limit=10 --seconds=30 --watch-file=/path/to/your.log  "regexp1" "regexp2"
+        go-watch-logs --limit=10 --seconds=30 --watch-file=/path/to/your.log  "regexp1" "regexp2"
 Description:
         Will send max 10 notifications every 30 seconds for regexp1 matched per line in your.log file
 		And will send max 10 notifications every 30 seconds for regexp2 matched per line in your.log file
 Examples:
     1) Regexps complex
-        watch_logs --limit=10 --seconds=30 --watch-file=/path/to/your.log  "Traceback" "^Error|^error" "^[Error]"
-        watch_logs --limit=10 --seconds=30 --watch-file=/path/to/your.log  "Traceback" "Error|error" "^[Error]|[ERROR]"
+        go-watch-logs --limit=10 --seconds=30 --watch-file=/path/to/your.log  "Traceback" "^Error|^error" "^[Error]"
+        go-watch-logs --limit=10 --seconds=30 --watch-file=/path/to/your.log  "Traceback" "Error|error" "^[Error]|[ERROR]"
 `
 	return msg
 }
