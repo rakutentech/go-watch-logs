@@ -53,6 +53,8 @@ But it is good idea to add it to your cronjob.
         Limit notify per number of second (default 30)
 --watch-file string
         Path to the file to tail
+-ignore-regexp string
+        One regexp to ignore reporting --ignore-regexp="donotmatch1|donotmatch2"
 -recovery-cmd string
         Shell cmd to execute on match found (default "")
 

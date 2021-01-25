@@ -37,7 +37,7 @@ var w WatchLogs
 // Usage of cli
 func Usage() string {
 	msg := `
-Version v1.0.0
+Version v1.1.0
 --help
         Prints this Usage
 --limit int
@@ -46,6 +46,8 @@ Version v1.0.0
         Limit notify per number of second (default 30)
 --watch-file string
         Path to the file to tail
+-ignore-regexp string
+        One regexp to ignore reporting --ignore-regexp="donotmatch1|donotmatch2"
 -recovery-cmd string
         Shell cmd to execute on match found (default "")
 
@@ -67,6 +69,8 @@ func main() {
 	limit := flag.Int("limit", 10, "Limit to notify")
 	seconds := flag.Int("seconds", 30, "Limit notify per number of second")
 	watchFile := flag.String("watch-file", "", "Path to the file to tail")
+	ignoreRegexp := flag.String("ignore-regexp", "", "Ignore regexp to not report")
+
 	recoveryCmd := flag.String("recovery-cmd", "", "Shell cmd to execute on recovery")
 
 	flag.Parse()
@@ -100,20 +104,20 @@ Regexps:%v
 	w.StartCounter(&counter, &regexps, seconds)
 
 	w.AutoRecover(func() {
-		w.StartWatcher(watchFile, &regexps, limit, &counter, recoveryCmd)
-	}, watchFile, regexps, limit, counter, recoveryCmd)
+		w.StartWatcher(watchFile, &regexps, limit, &counter, recoveryCmd, ignoreRegexp)
+	}, watchFile, regexps, limit, counter, recoveryCmd, ignoreRegexp)
 }
 
 // AutoRecover recursively the function that panics
 // tail will panic when the file is deleted, or temporarily deleted
 // this function allows this cli to never exit
-func (w *WatchLogs) AutoRecover(fn func(), watchFile *string, regexps []string, limit *int, counter map[string]int, recoveryCmd *string) (recovered interface{}) {
+func (w *WatchLogs) AutoRecover(fn func(), watchFile *string, regexps []string, limit *int, counter map[string]int, recoveryCmd *string, ignoreRegexp *string) (recovered interface{}) {
 	defer func() {
 		recovered = recover()
 		fmt.Println("Auto recover")
 		w.AutoRecover(func() {
-			w.StartWatcher(watchFile, &regexps, limit, &counter, recoveryCmd)
-		}, watchFile, regexps, limit, counter, recoveryCmd)
+			w.StartWatcher(watchFile, &regexps, limit, &counter, recoveryCmd, ignoreRegexp)
+		}, watchFile, regexps, limit, counter, recoveryCmd, ignoreRegexp)
 	}()
 	fn()
 	return
@@ -123,10 +127,15 @@ func (w *WatchLogs) AutoRecover(fn func(), watchFile *string, regexps []string, 
 // Read each line and match regexp provided
 // Upon a match sends notification based on the .env values
 // Limits sending notifications by num of notifications sent
-func (w *WatchLogs) StartWatcher(watchFile *string, regexps *[]string, limit *int, counter *map[string]int, recoveryCmd *string) {
+func (w *WatchLogs) StartWatcher(watchFile *string, regexps *[]string, limit *int, counter *map[string]int, recoveryCmd *string, ignoreRegexp *string) {
 	t, _ := tail.TailFile(*watchFile, tail.Config{Follow: true})
 
 	for line := range t.Lines {
+		ignoreRegexps := []string{*ignoreRegexp}
+		if re := w.GetMatchedRegexp(line.Text, &ignoreRegexps); re != "" {
+			fmt.Println("Will NOT notify (ignore): " + line.Text)
+			continue
+		}
 		if re := w.GetMatchedRegexp(line.Text, regexps); re != "" {
 			if (*counter)[re] < *limit {
 				w.IncrementCounter(counter, re)
