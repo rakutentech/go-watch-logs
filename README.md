@@ -51,6 +51,8 @@ But it is good idea to add it to your cronjob.
         Limit to notify (default 10)
 --seconds int
         Limit notify per number of second (default 30)
+--offset int
+	Offset Limit to ignore first few (default 0)
 --watch-file string
         Path to the file to tail
 -ignore-regexp string
