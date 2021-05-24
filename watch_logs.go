@@ -48,9 +48,9 @@ Version v1.1.0
         Limit notify per number of second (default 30)
 --watch-file string
         Path to the file to tail
--ignore-regexp string
+--ignore-regexp string
         One regexp to ignore reporting --ignore-regexp="donotmatch1|donotmatch2"
--recovery-cmd string
+--recovery-cmd string
         Shell cmd to execute on match found (default "")
 
 Basic Usage:
@@ -99,7 +99,7 @@ Offset:%d
 Regexps:%v
 Ignore Rexp:%s
 -------
-`, *watchFile, *seconds, *limit, offset, flag.Args(), *ignoreRegexp)
+`, *watchFile, *seconds, *limit, *offset, flag.Args(), *ignoreRegexp)
 
 	// @var counter keeps the ledger of count of num of notifications sent for a regexp within a num of seconds
 	// @var counter is reset after num of seconds have passed
