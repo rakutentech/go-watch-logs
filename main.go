@@ -58,7 +58,11 @@ func watch() {
 		fmt.Println("ms teams message:")
 		fmt.Println(teamsMsg)
 		alert := n.NewAlert(fmt.Errorf(teamsMsg), nil)
-		alert.Notify()
+		go func() {
+			if err := alert.Notify(); err != nil {
+				fmt.Println("error sending alert:", err)
+			}
+		}()
 	}
 
 	fmt.Printf("error count: %d\n", errorCount)
@@ -67,25 +71,14 @@ func watch() {
 
 func SetupFlags() {
 	flag.StringVar(&f.filePath, "file-path", "", "path to logs file")
-	flag.StringVar(&f.filePath, "f", "", "path to logs file")
-
-	flag.StringVar(&f.dbPath, "db-path", "my.db", "path to db file")
-	flag.StringVar(&f.dbPath, "d", "go-watch-logs.db", "path to db file")
-
+	flag.StringVar(&f.dbPath, "db-path", "go-watch-logs.db", "path to db file")
 	flag.StringVar(&f.match, "match", "", "match pattern")
-	flag.StringVar(&f.match, "m", "", "match pattern")
-
 	flag.StringVar(&f.ignore, "ignore", "", "ignore pattern")
-	flag.StringVar(&f.ignore, "i", "", "ignore pattern")
-
 	flag.BoolVar(&f.version, "version", false, "print version")
-	flag.BoolVar(&f.version, "v", false, "print version")
 
 	flag.StringVar(&f.msTeamsHook, "ms-teams-hook", "", "ms teams webhook")
-	flag.StringVar(&f.msTeamsHook, "mth", "", "ms teams webhook")
 
 	flag.Parse()
-
 }
 
 func SetMSTeams() {

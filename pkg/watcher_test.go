@@ -7,6 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	inMemory = ":memory:"
+)
+
 func setupTempFile(content string) (string, error) {
 	tmpfile, err := os.CreateTemp("", "test.log")
 	if err != nil {
@@ -22,10 +26,10 @@ func setupTempFile(content string) (string, error) {
 }
 
 func TestNewWatcher(t *testing.T) {
-	dbName := ":memory:"
-	filePath := "test.log"
-	matchPattern := "error:1"
-	ignorePattern := "ignore"
+	dbName := inMemory
+	filePath := "test.log"    // nolint: goconst
+	matchPattern := "error:1" // nolint: goconst
+	ignorePattern := "ignore" // nolint: goconst
 
 	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
 	assert.NoError(t, err)
@@ -44,9 +48,9 @@ error:1`
 	assert.NoError(t, err)
 	defer os.Remove(filePath)
 
-	dbName := ":memory:"
-	matchPattern := `error:1`
-	ignorePattern := `ignore`
+	dbName := inMemory
+	matchPattern := `error:1` // nolint: goconst
+	ignorePattern := `ignore` // nolint: goconst
 
 	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
 	assert.NoError(t, err)
@@ -60,7 +64,7 @@ error:1`
 }
 
 func TestSetAndGetLastLineNum(t *testing.T) {
-	dbName := ":memory:"
+	dbName := inMemory
 	filePath := "test.log"
 	matchPattern := "error:1"
 	ignorePattern := "ignore"
@@ -77,8 +81,8 @@ func TestSetAndGetLastLineNum(t *testing.T) {
 func TestLoadAndSaveState(t *testing.T) {
 	dbName := "test.db"
 	filePath := "test.log"
-	matchPattern := "error:1"
-	ignorePattern := "ignore"
+	matchPattern := "error:1" // nolint: goconst
+	ignorePattern := "ignore" // nolint: goconst
 
 	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
 	assert.NoError(t, err)
@@ -104,9 +108,9 @@ line2`
 	assert.NoError(t, err)
 	defer os.Remove(filePath)
 
-	dbName := ":memory:"
-	matchPattern := `error:1`
-	ignorePattern := `ignore`
+	dbName := inMemory
+	matchPattern := `error:1` // nolint: goconst
+	ignorePattern := `ignore` // nolint: goconst
 
 	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
 	assert.NoError(t, err)
@@ -119,7 +123,7 @@ line2`
 	assert.Equal(t, "error:1", last)
 
 	// Simulate log rotation by truncating the file
-	err = os.WriteFile(filePath, []byte("new content\nerror:1\n"), 0644)
+	err = os.WriteFile(filePath, []byte("new content\nerror:1\n"), 0644) // nolint: gosec
 	assert.NoError(t, err)
 
 	// Ensure Watcher detects log rotation
