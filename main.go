@@ -7,8 +7,6 @@ import (
 
 	n "github.com/rakutentech/go-alertnotification"
 	"github.com/rakutentech/go-watch-logs/pkg"
-
-	"log/slog"
 )
 
 type Flags struct {
@@ -28,11 +26,11 @@ func main() {
 	SetupFlags()
 	SetMSTeams()
 	if f.version {
-		slog.Info(version)
+		fmt.Println(version)
 		return
 	}
 	if f.filePath == "" {
-		slog.Error("file is required")
+		fmt.Println("file is required")
 		return
 	}
 	watch()
