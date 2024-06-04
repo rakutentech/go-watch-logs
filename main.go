@@ -85,7 +85,7 @@ func SetMSTeams() {
 	if f.msTeamsHook == "" {
 		return
 	}
-	// get hostname
+
 	hostname, _ := os.Hostname()
 	os.Setenv("APP_NAME", f.filePath)
 	os.Setenv("APP_ENV", hostname)

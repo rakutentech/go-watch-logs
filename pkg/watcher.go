@@ -143,7 +143,7 @@ func (w *Watcher) loadState() error {
 		if err != nil {
 			return err
 		}
-		fmt.Sscanf(lastLineStr, "%d", &w.lastLineNum)
+		fmt.Sscanf(lastLineStr, "%d", &w.lastLineNum) // nolint: errcheck
 
 		lastFileSizeStr, err := tx.Get(w.lastFileSizeKey)
 		if errors.Is(err, buntdb.ErrNotFound) {
@@ -152,7 +152,7 @@ func (w *Watcher) loadState() error {
 		if err != nil {
 			return err
 		}
-		fmt.Sscanf(lastFileSizeStr, "%d", &w.lastFileSize)
+		fmt.Sscanf(lastFileSizeStr, "%d", &w.lastFileSize) // nolint: errcheck
 		return nil
 	})
 }
