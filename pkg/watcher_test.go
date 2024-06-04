@@ -234,7 +234,7 @@ line2`
 		b.Fatalf("Unexpected results: count=%d, first=%s, last=%s", count, first, last)
 	}
 
-	err = os.WriteFile(filePath, []byte("new content\nerror:1\n"), 0644)
+	err = os.WriteFile(filePath, []byte("new content\nerror:1\n"), 0644) // nolint: gosec
 	if err != nil {
 		b.Fatal(err)
 	}
