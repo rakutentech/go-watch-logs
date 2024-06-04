@@ -17,12 +17,18 @@ type Watcher struct {
 	lastLineKey     string
 	lastFileSizeKey string
 	matchPattern    string
+	ignorePattern   string
 	lastLineNum     int
 	lastFileSize    int64
 	mutex           sync.Mutex
 }
 
-func NewWatcher(dbName string, filePath string, matchPattern string) (*Watcher, error) {
+func NewWatcher(
+	dbName string,
+	filePath string,
+	matchPattern string,
+	ignorePattern string,
+) (*Watcher, error) {
 	db, err := buntdb.Open(dbName)
 	if err != nil {
 		return nil, err
@@ -32,6 +38,7 @@ func NewWatcher(dbName string, filePath string, matchPattern string) (*Watcher, 
 		db:              db,
 		filePath:        filePath,
 		matchPattern:    matchPattern,
+		ignorePattern:   ignorePattern,
 		lastLineKey:     Hash(filePath + "llk"),
 		lastFileSizeKey: Hash(filePath + "llks"),
 	}
@@ -75,6 +82,10 @@ func (w *Watcher) ReadFileAndMatchErrors() (int, string, string, error) {
 	if err != nil {
 		return errorCounts, firstLine, lastLine, err
 	}
+	ri, err := regexp.Compile(w.ignorePattern)
+	if err != nil {
+		return errorCounts, firstLine, lastLine, err
+	}
 
 	currentLineNum := 0
 	for scanner.Scan() {
@@ -83,6 +94,9 @@ func (w *Watcher) ReadFileAndMatchErrors() (int, string, string, error) {
 			continue
 		}
 		line := scanner.Text()
+		if w.ignorePattern != "" && !ri.MatchString(line) {
+			continue
+		}
 		if re.MatchString(line) {
 			if firstLine == "" {
 				firstLine = line

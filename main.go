@@ -3,17 +3,21 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
+	n "github.com/rakutentech/go-alertnotification"
 	"github.com/rakutentech/go-watch-logs/pkg"
 
 	"log/slog"
 )
 
 type Flags struct {
-	filePath string
-	match    string
-	dbPath   string
-	version  bool
+	filePath    string
+	match       string
+	ignore      string
+	dbPath      string
+	msTeamsHook string
+	version     bool
 }
 
 var f Flags
@@ -22,6 +26,7 @@ var version = "dev"
 
 func main() {
 	SetupFlags()
+	SetMSTeams()
 	if f.version {
 		slog.Info(version)
 		return
@@ -34,7 +39,7 @@ func main() {
 }
 
 func watch() {
-	watcher, err := pkg.NewWatcher(f.dbPath, f.filePath, f.match)
+	watcher, err := pkg.NewWatcher(f.dbPath, f.filePath, f.match, f.ignore)
 	if err != nil {
 		fmt.Println("Error creating watcher:", err)
 		return
@@ -47,12 +52,15 @@ func watch() {
 		return
 	}
 
-	fmt.Printf("Errors: %d\n", errorCount)
-	fmt.Printf("%s\n%s", firstLine, lastLine)
+	msg := fmt.Sprintf("total errors: %d\n\n", errorCount)
+	msg += fmt.Sprintf("1st error<pre>\n\n%s</pre>\n\nlast error<pre>\n\n%s</pre>", firstLine, lastLine)
 
-	// Get the last line number checked
-	lastLineNum := watcher.GetLastLineNum()
-	fmt.Println("Last line number checked:", lastLineNum)
+	fmt.Println(msg)
+
+	alert := n.NewAlert(fmt.Errorf(msg), nil)
+	alert.Notify()
+
+	fmt.Printf("Last line number: %d\n", watcher.GetLastLineNum())
 }
 
 func SetupFlags() {
@@ -62,11 +70,40 @@ func SetupFlags() {
 	flag.StringVar(&f.dbPath, "db-path", "my.db", "path to db file")
 	flag.StringVar(&f.dbPath, "d", "my.db", "path to db file")
 
-	flag.StringVar(&f.match, "match", "", "match string")
-	flag.StringVar(&f.match, "m", "", "match string")
+	flag.StringVar(&f.match, "match", "", "match pattern")
+	flag.StringVar(&f.match, "m", "", "match pattern")
+
+	flag.StringVar(&f.ignore, "ignore", "", "ignore pattern")
+	flag.StringVar(&f.ignore, "i", "", "ignore pattern")
 
 	flag.BoolVar(&f.version, "version", false, "print version")
 	flag.BoolVar(&f.version, "v", false, "print version")
 
+	flag.StringVar(&f.msTeamsHook, "ms-teams-hook", "", "ms teams webhook")
+	flag.StringVar(&f.msTeamsHook, "mth", "", "ms teams webhook")
+
 	flag.Parse()
+
+}
+
+func SetMSTeams() {
+	if f.msTeamsHook == "" {
+		return
+	}
+	// get hostname
+	hostname, _ := os.Hostname()
+	os.Setenv("APP_NAME", f.filePath)
+	os.Setenv("APP_ENV", hostname)
+	os.Setenv("MS_TEAMS_ALERT_ENABLED", "true")
+	os.Setenv("MS_TEAMS_WEBHOOK", f.msTeamsHook)
+	os.Setenv("MS_TEAMS_CARD_SUBJECT", fmt.Sprintf("match: <code>%s</code><br>ignore: <code>%s</code>", f.match, f.ignore))
+	os.Setenv("ALERT_CARD_SUBJECT", "GO-WATCH-LOGS")
+	proxyVars := []string{"https_proxy", "http_proxy", "HTTPS_PROXY", "HTTP_PROXY"}
+
+	for _, proxyVar := range proxyVars {
+		if os.Getenv(proxyVar) != "" {
+			os.Setenv("MS_TEAMS_PROXY_URL", os.Getenv(proxyVar))
+			break
+		}
+	}
 }
