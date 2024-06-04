@@ -14,6 +14,7 @@ type Flags struct {
 	match       string
 	ignore      string
 	dbPath      string
+	minError    int
 	msTeamsHook string
 	version     bool
 }
@@ -49,8 +50,20 @@ func watch() {
 		fmt.Println(err)
 		return
 	}
+	fmt.Printf("error count: %d\n", errorCount)
+	fmt.Printf("last line number: %d\n", watcher.GetLastLineNum())
 
-	if errorCount > 0 && f.msTeamsHook != "" {
+	if errorCount < 0 {
+		return
+	}
+	if errorCount < f.minError {
+		return
+	}
+	notify(errorCount, firstLine, lastLine)
+}
+
+func notify(errorCount int, firstLine, lastLine string) {
+	if f.msTeamsHook != "" {
 		teamsMsg := fmt.Sprintf("total errors: %d\n\n", errorCount)
 		teamsMsg += fmt.Sprintf("1st error<pre>\n\n%s</pre>\n\nlast error<pre>\n\n%s</pre>", firstLine, lastLine)
 		fmt.Println("ms teams message:")
@@ -62,16 +75,14 @@ func watch() {
 			}
 		}()
 	}
-
-	fmt.Printf("error count: %d\n", errorCount)
-	fmt.Printf("last line number: %d\n", watcher.GetLastLineNum())
 }
 
 func SetupFlags() {
 	flag.StringVar(&f.filePath, "file-path", "", "path to logs file")
 	flag.StringVar(&f.dbPath, "db-path", "go-watch-logs.db", "path to db file")
-	flag.StringVar(&f.match, "match", "", "match pattern")
-	flag.StringVar(&f.ignore, "ignore", "", "ignore pattern")
+	flag.StringVar(&f.match, "match", "", "regex for matching errors")
+	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors")
+	flag.IntVar(&f.minError, "min-error", 1, "on minimum error threshold to notify")
 	flag.BoolVar(&f.version, "version", false, "print version")
 
 	flag.StringVar(&f.msTeamsHook, "ms-teams-hook", "", "ms teams webhook")

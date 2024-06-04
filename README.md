@@ -46,9 +46,11 @@ curl -sL https://raw.githubusercontent.com/rakutentech/go-watch-logs/master/inst
   -file-path string
     	path to logs file
   -ignore string
-    	ignore pattern
+    	regex for ignoring errors
   -match string
-    	match pattern
+    	regex for matching errors
+  -min-error int
+    	on minimum error threshold to notify (default 1)
   -ms-teams-hook string
     	ms teams webhook
   -version
