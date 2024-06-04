@@ -135,3 +135,116 @@ line2`
 	assert.Equal(t, "error:1", first)
 	assert.Equal(t, "error:1", last)
 }
+
+func BenchmarkReadFileAndMatchErrors(b *testing.B) {
+	content := `line1
+error:1
+error:2
+line2
+error:1`
+	filePath, err := setupTempFile(content)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.Remove(filePath)
+
+	dbName := inMemory
+	matchPattern := `error:1`
+	ignorePattern := `ignore`
+
+	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer watcher.Close()
+
+	for i := 0; i < b.N; i++ {
+		_, _, _, err := watcher.ReadFileAndMatchErrors()
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkSetAndGetLastLineNum(b *testing.B) {
+	dbName := inMemory
+	filePath := "test.log"
+	matchPattern := "error:1"
+	ignorePattern := "ignore"
+
+	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer watcher.Close()
+
+	for i := 0; i < b.N; i++ {
+		watcher.SetLastLineNum(10)
+		_ = watcher.GetLastLineNum()
+	}
+}
+
+func BenchmarkLoadAndSaveState(b *testing.B) {
+	dbName := "test.db"
+	filePath := "test.log"
+	matchPattern := "error:1"
+	ignorePattern := "ignore"
+
+	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer watcher.Close()
+
+	watcher.SetLastLineNum(10)
+
+	for i := 0; i < b.N; i++ {
+		_, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkLogRotation(b *testing.B) {
+	content := `line1
+error:1
+line2`
+	filePath, err := setupTempFile(content)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.Remove(filePath)
+
+	dbName := inMemory
+	matchPattern := `error:1`
+	ignorePattern := `ignore`
+
+	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer watcher.Close()
+
+	count, first, last, err := watcher.ReadFileAndMatchErrors()
+	if err != nil {
+		b.Fatal(err)
+	}
+	if count != 1 || first != "error:1" || last != "error:1" {
+		b.Fatalf("Unexpected results: count=%d, first=%s, last=%s", count, first, last)
+	}
+
+	err = os.WriteFile(filePath, []byte("new content\nerror:1\n"), 0644)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	watcher.SetLastLineNum(0)
+
+	for i := 0; i < b.N; i++ {
+		_, _, _, err := watcher.ReadFileAndMatchErrors()
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
