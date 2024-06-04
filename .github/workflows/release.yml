@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 0
       - uses: kevincobain2000/action-gobrew@v2
         with:
-          version: 'latest'
+          version: 'mod'
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5

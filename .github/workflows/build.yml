@@ -2,39 +2,31 @@ name: build
 
 on:
   pull_request:
-    branches:
-      - '**'
-    tags-ignore:
-      - v*
   push:
+    tags-ignore:
+      - '**'
     branches:
       - '**'
-    tags-ignore:
-      - v*
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v1
-      -
-        name: Set up Go
-        uses: actions/setup-go@v1
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: kevincobain2000/action-gobrew@v2
         with:
-          go-version: 1.14.x
-      -
-        name: Verify Go Modules
-        run: go mod download
-      -
-        name: Vet
-        run: go vet ./...
-      -
-        name: Build
-        run: go build -o /dev/null
+          version: 'mod'
 
-      # - name: Lint Code Base
-      #   uses: docker://github/super-linter:latest
-      #   env:
-      #     VALIDATE_ALL_CODEBASE: false
+      - name: Install Tools
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          go install github.com/axw/gocov/gocov@latest
+          go install github.com/AlekSi/gocov-xml@latest
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          curl -sLk https://raw.githubusercontent.com/kevincobain2000/cover-totalizer/master/install.sh | sh
+
+      - run: go mod tidy
+      - run: golangci-lint run ./...
+      - run: go build
+      - run: go test ./...

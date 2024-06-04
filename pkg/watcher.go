@@ -94,7 +94,7 @@ func (w *Watcher) ReadFileAndMatchErrors() (int, string, string, error) {
 			continue
 		}
 		line := scanner.Text()
-		if w.ignorePattern != "" && !ri.MatchString(line) {
+		if w.ignorePattern != "" && ri.MatchString(line) {
 			continue
 		}
 		if re.MatchString(line) {

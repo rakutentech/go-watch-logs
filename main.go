@@ -52,15 +52,17 @@ func watch() {
 		return
 	}
 
-	msg := fmt.Sprintf("total errors: %d\n\n", errorCount)
-	msg += fmt.Sprintf("1st error<pre>\n\n%s</pre>\n\nlast error<pre>\n\n%s</pre>", firstLine, lastLine)
+	if errorCount > 0 && f.msTeamsHook != "" {
+		teamsMsg := fmt.Sprintf("total errors: %d\n\n", errorCount)
+		teamsMsg += fmt.Sprintf("1st error<pre>\n\n%s</pre>\n\nlast error<pre>\n\n%s</pre>", firstLine, lastLine)
+		fmt.Println("ms teams message:")
+		fmt.Println(teamsMsg)
+		alert := n.NewAlert(fmt.Errorf(teamsMsg), nil)
+		alert.Notify()
+	}
 
-	fmt.Println(msg)
-
-	alert := n.NewAlert(fmt.Errorf(msg), nil)
-	alert.Notify()
-
-	fmt.Printf("Last line number: %d\n", watcher.GetLastLineNum())
+	fmt.Printf("error count: %d\n", errorCount)
+	fmt.Printf("last line number: %d\n", watcher.GetLastLineNum())
 }
 
 func SetupFlags() {
@@ -68,7 +70,7 @@ func SetupFlags() {
 	flag.StringVar(&f.filePath, "f", "", "path to logs file")
 
 	flag.StringVar(&f.dbPath, "db-path", "my.db", "path to db file")
-	flag.StringVar(&f.dbPath, "d", "my.db", "path to db file")
+	flag.StringVar(&f.dbPath, "d", "go-watch-logs.db", "path to db file")
 
 	flag.StringVar(&f.match, "match", "", "match pattern")
 	flag.StringVar(&f.match, "m", "", "match pattern")

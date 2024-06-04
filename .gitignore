@@ -19,5 +19,5 @@ tmp/
 .env
 *.pid
 *.log
-my.db
+*.db
 .DS_Store
