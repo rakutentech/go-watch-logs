@@ -13,7 +13,7 @@
 
 **Flexible:** Works with any logs file, huge to massive, log rotation is supported.
 
-**Notify:** Supports MS Teams. Emails, Slack (coming soon).
+**Notify:** Supports MS Teams or emails.
 
 ### Install using go
 
@@ -44,19 +44,18 @@ curl -sL https://raw.githubusercontent.com/rakutentech/go-watch-logs/master/inst
 
 ```sh
   -db-path string
-    	path to db file (default "go-watch-logs.db")
+    	path to store db file (default ".go-watch-logs.db")
   -file-path string
-    	path to logs file
+    	full path to the log file
   -ignore string
-    	regex for ignoring errors
+    	regex for ignoring errors (empty to ignore none)
   -match string
-    	regex for matching errors
+    	regex for matching errors (empty to match all lines)
   -min-error int
     	on minimum error threshold to notify (default 1)
   -ms-teams-hook string
     	ms teams webhook
   -version
-    	print version
 ```
 
 

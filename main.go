@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gookit/color"
+
 	n "github.com/rakutentech/go-alertnotification"
 	"github.com/rakutentech/go-watch-logs/pkg"
 )
@@ -25,13 +27,17 @@ var version = "dev"
 
 func main() {
 	SetupFlags()
-	SetMSTeams()
 	if f.version {
-		fmt.Println(version)
+		color.Secondary.Println(version)
 		return
 	}
 	if f.filePath == "" {
-		fmt.Println("file is required")
+		color.Danger.Println("file-path is required")
+		return
+	}
+	// check if file exists
+	if _, err := os.Stat(f.filePath); os.IsNotExist(err) {
+		color.Danger.Println("file does not exist")
 		return
 	}
 	watch()
@@ -40,20 +46,31 @@ func main() {
 func watch() {
 	watcher, err := pkg.NewWatcher(f.dbPath, f.filePath, f.match, f.ignore)
 	if err != nil {
-		fmt.Println("Error creating watcher:", err)
+		color.Danger.Println(err)
 		return
 	}
 	defer watcher.Close()
 
+	color.Secondary.Print("1st line no..................")
+	color.Success.Println(watcher.GetLastLineNum())
+
 	errorCount, firstLine, lastLine, err := watcher.ReadFileAndMatchErrors()
 	if err != nil {
-		fmt.Println(err)
+		color.Danger.Println(err)
 		return
 	}
-	fmt.Printf("error count: %d\n", errorCount)
-	fmt.Printf("1st line: %s\n", firstLine)
-	fmt.Printf("last line: %s\n", lastLine)
-	fmt.Printf("last line number: %d\n", watcher.GetLastLineNum())
+	color.Secondary.Print("error count..................")
+	color.Danger.Println(errorCount)
+
+	// first line
+	color.Secondary.Print("1st line.....................")
+	fmt.Println(firstLine)
+
+	color.Secondary.Print("last line....................")
+	fmt.Println(lastLine)
+
+	color.Secondary.Print("last line no.................")
+	color.Success.Println(watcher.GetLastLineNum())
 
 	if errorCount < 0 {
 		return
@@ -68,34 +85,30 @@ func notify(errorCount int, firstLine, lastLine string) {
 	if f.msTeamsHook != "" {
 		teamsMsg := fmt.Sprintf("total errors: %d\n\n", errorCount)
 		teamsMsg += fmt.Sprintf("1st error<pre>\n\n%s</pre>\n\nlast error<pre>\n\n%s</pre>", firstLine, lastLine)
-		fmt.Println("ms teams message:")
+		color.Secondary.Println("Sending to Teams.............")
+		fmt.Println(teamsMsg)
 		alert := n.NewAlert(fmt.Errorf(teamsMsg), nil)
-		go func() {
-			if err := alert.Notify(); err != nil {
-				fmt.Println("error sending alert:", err)
-			}
-		}()
+		if err := alert.Notify(); err != nil {
+			color.Danger.Println(err)
+		}
 	}
 }
 
 func SetupFlags() {
-	flag.StringVar(&f.filePath, "file-path", "", "path to logs file")
-	flag.StringVar(&f.dbPath, "db-path", ".go-watch-logs.db", "path to db file")
-	flag.StringVar(&f.match, "match", "", "regex for matching errors")
-	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors")
+	flag.StringVar(&f.filePath, "file-path", "", "full path to the log file")
+	flag.StringVar(&f.dbPath, "db-path", ".go-watch-logs.db", "path to store db file")
+	flag.StringVar(&f.match, "match", "", "regex for matching errors (empty to match all lines)")
+	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
 	flag.IntVar(&f.minError, "min-error", 1, "on minimum error threshold to notify")
-	flag.BoolVar(&f.version, "version", false, "print version")
+	flag.BoolVar(&f.version, "version", false, "")
 
 	flag.StringVar(&f.msTeamsHook, "ms-teams-hook", "", "ms teams webhook")
 
 	flag.Parse()
+	SetMSTeams()
 }
 
 func SetMSTeams() {
-	if f.msTeamsHook == "" {
-		return
-	}
-
 	hostname, _ := os.Hostname()
 	os.Setenv("APP_NAME", f.filePath)
 	os.Setenv("APP_ENV", hostname)
