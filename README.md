@@ -1,5 +1,7 @@
+<h1 align="center">
+  Go Watch Logs
+</h1>
 <p align="center">
-  Go Watch Logs<br>
   Monitor static logs file for patterns and send alerts to MS Teams<br>
 </p>
 
