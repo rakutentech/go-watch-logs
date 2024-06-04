@@ -51,6 +51,8 @@ func watch() {
 		return
 	}
 	fmt.Printf("error count: %d\n", errorCount)
+	fmt.Printf("1st line: %s\n", firstLine)
+	fmt.Printf("last line: %s\n", lastLine)
 	fmt.Printf("last line number: %d\n", watcher.GetLastLineNum())
 
 	if errorCount < 0 {
@@ -67,7 +69,6 @@ func notify(errorCount int, firstLine, lastLine string) {
 		teamsMsg := fmt.Sprintf("total errors: %d\n\n", errorCount)
 		teamsMsg += fmt.Sprintf("1st error<pre>\n\n%s</pre>\n\nlast error<pre>\n\n%s</pre>", firstLine, lastLine)
 		fmt.Println("ms teams message:")
-		fmt.Println(teamsMsg)
 		alert := n.NewAlert(fmt.Errorf(teamsMsg), nil)
 		go func() {
 			if err := alert.Notify(); err != nil {
@@ -79,7 +80,7 @@ func notify(errorCount int, firstLine, lastLine string) {
 
 func SetupFlags() {
 	flag.StringVar(&f.filePath, "file-path", "", "path to logs file")
-	flag.StringVar(&f.dbPath, "db-path", "go-watch-logs.db", "path to db file")
+	flag.StringVar(&f.dbPath, "db-path", ".go-watch-logs.db", "path to db file")
 	flag.StringVar(&f.match, "match", "", "regex for matching errors")
 	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors")
 	flag.IntVar(&f.minError, "min-error", 1, "on minimum error threshold to notify")
