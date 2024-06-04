@@ -1,0 +1,31 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    tags-ignore:
+      - '**'
+    branches:
+      - '**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: kevincobain2000/action-gobrew@v2
+        with:
+          version: 'mod'
+
+      - name: Install Tools
+        run: |
+          go install github.com/axw/gocov/gocov@latest
+          go install github.com/AlekSi/gocov-xml@latest
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          curl -sLk https://raw.githubusercontent.com/kevincobain2000/cover-totalizer/master/install.sh | sh
+
+      - run: go mod tidy
+      - run: golangci-lint run ./...
+      - run: go build
+      - run: go test ./...
