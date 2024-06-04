@@ -6,14 +6,12 @@ toolchain go1.22.3
 
 require (
 	github.com/gookit/color v1.5.4
-	github.com/rakutentech/go-alertnotification v1.1.3
+	github.com/kevincobain2000/go-msteams v0.0.0-20231124044510-4369c04dd224
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/buntdb v1.3.1
 )
 
 require (
-	github.com/GitbookIO/diskache v0.0.0-20161028144708-bfb81bf58cb1 // indirect
-	github.com/GitbookIO/syncgroup v0.0.0-20200915204659-4f0b2961ab10 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/tidwall/btree v1.4.2 // indirect
