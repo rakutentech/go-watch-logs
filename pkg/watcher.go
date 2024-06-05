@@ -18,6 +18,7 @@ type Watcher struct {
 	lastFileSizeKey string
 	matchPattern    string
 	ignorePattern   string
+	noCache         bool
 	lastLineNum     int
 	lastFileSize    int64
 	mutex           sync.Mutex
@@ -28,6 +29,7 @@ func NewWatcher(
 	filePath string,
 	matchPattern string,
 	ignorePattern string,
+	noCache bool,
 ) (*Watcher, error) {
 	db, err := buntdb.Open(dbName)
 	if err != nil {
@@ -39,16 +41,31 @@ func NewWatcher(
 		filePath:        filePath,
 		matchPattern:    matchPattern,
 		ignorePattern:   ignorePattern,
+		noCache:         noCache,
 		lastLineKey:     Hash(filePath + "llk"),
 		lastFileSizeKey: Hash(filePath + "llks"),
 	}
+	if watcher.noCache {
+		if err := watcher.NoCache(); err != nil {
+			return nil, err
+		}
+	}
 
-	err = watcher.loadState()
-	if err != nil {
+	if err := watcher.loadState(); err != nil {
 		return nil, err
 	}
 
 	return watcher, nil
+}
+func (w *Watcher) NoCache() error {
+	return w.db.Update(func(tx *buntdb.Tx) error {
+		_, _, err := tx.Set(w.lastLineKey, "0", nil)
+		if err != nil {
+			return err
+		}
+		_, _, err = tx.Set(w.lastFileSizeKey, "0", nil)
+		return err
+	})
 }
 
 func (w *Watcher) ReadFileAndMatchErrors() (int, string, string, error) {

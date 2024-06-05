@@ -22,6 +22,7 @@ type Flags struct {
 	every       uint64
 	proxy       string
 	msTeamsHook string
+	noCache     bool
 	version     bool
 }
 
@@ -31,41 +32,51 @@ var version = "dev"
 
 func main() {
 	SetupFlags()
-	if f.version {
-		color.Secondary.Println(version)
-		return
-	}
-	if f.filePath == "" {
-		color.Danger.Println("file-path is required")
-		return
-	}
-	// check if file exists
-	if _, err := os.Stat(f.filePath); os.IsNotExist(err) {
-		color.Danger.Println("file does not exist")
+	if err := validate(); err != nil {
 		return
 	}
 
 	watch()
-	if f.every > 0 {
-		err := gocron.Every(f.every).Second().Do(watch)
-		if err != nil {
-			color.Danger.Println(err)
-			return
-		}
-		<-gocron.Start()
+	if f.every <= 0 {
+		return
 	}
+
+	if err := gocron.Every(f.every).Second().Do(watch); err != nil {
+		color.Danger.Println(err)
+		return
+	}
+	<-gocron.Start()
+}
+
+func validate() error {
+	if f.version {
+		color.Secondary.Println(version)
+		return fmt.Errorf("version")
+	}
+	if f.filePath == "" {
+		color.Danger.Println("file-path is required")
+		return fmt.Errorf("filepath")
+	}
+	if _, err := os.Stat(f.filePath); os.IsNotExist(err) {
+		color.Danger.Println("file does not exist")
+		return fmt.Errorf("file does not exist")
+	}
+	return nil
 }
 
 func watch() {
-	watcher, err := pkg.NewWatcher(f.dbPath, f.filePath, f.match, f.ignore)
+	watcher, err := pkg.NewWatcher(f.dbPath, f.filePath, f.match, f.ignore, f.noCache)
 	if err != nil {
 		color.Danger.Println(err)
 		return
 	}
 	defer watcher.Close()
 
+	color.Secondary.Print("scanning.....................")
+	fmt.Println(f.filePath)
+
 	color.Secondary.Print("1st line no..................")
-	color.Cyan.Println(watcher.GetLastLineNum())
+	fmt.Println(watcher.GetLastLineNum())
 
 	errorCount, firstLine, lastLine, err := watcher.ReadFileAndMatchErrors()
 	if err != nil {
@@ -77,13 +88,13 @@ func watch() {
 
 	// first line
 	color.Secondary.Print("1st line.....................")
-	fmt.Println(firstLine)
+	fmt.Println(pkg.Truncate(firstLine, 50))
 
 	color.Secondary.Print("last line....................")
-	fmt.Println(lastLine)
+	fmt.Println(pkg.Truncate(lastLine, 50))
 
 	color.Secondary.Print("last line no.................")
-	color.Cyan.Println(watcher.GetLastLineNum())
+	fmt.Println(watcher.GetLastLineNum())
 
 	fmt.Println()
 
@@ -123,6 +134,7 @@ func SetupFlags() {
 	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
 	flag.Uint64Var(&f.every, "every", 0, "run every n seconds (0 to run once)")
 	flag.IntVar(&f.minError, "min-error", 1, "on minimum num of errors should notify")
+	flag.BoolVar(&f.noCache, "no-cache", false, "")
 	flag.BoolVar(&f.version, "version", false, "")
 
 	flag.StringVar(&f.proxy, "proxy", "", "proxy")

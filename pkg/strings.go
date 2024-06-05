@@ -8,3 +8,10 @@ func Hash(s string) string {
 	bs := h.Sum(nil)
 	return string(bs)
 }
+
+func Truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "..."
+}
