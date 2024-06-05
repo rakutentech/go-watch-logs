@@ -3,6 +3,7 @@
 </h1>
 <p align="center">
   Monitor static logs file for patterns and send alerts to MS Teams<br>
+  Zero memory allocation<br>
 </p>
 
 **Quick Setup:** One command to install Go and manage versions.
@@ -14,6 +15,8 @@
 **Flexible:** Works with any logs file, huge to massive, log rotation is supported.
 
 **Notify:** Supports MS Teams or emails.
+
+**Scheduler:** Run it on a cron.
 
 ### Install using go
 
@@ -28,13 +31,23 @@ Use this method if go is not installed on your server
 
 ```bash
 curl -sL https://raw.githubusercontent.com/rakutentech/go-watch-logs/master/install.sh | sh
+./go-watch-logs --help
 ```
 
-## Run it on a cron
+## Examples
 
+```sh
+# match error patterns and notify on MS Teams
+go-watch-logs --file-path=my.log --match="error:pattern1|error:pattern2" --ms-teams-hook="https://outlook.office.com/webhook/xxxxx"
 
-```
-* * * * * go-watch-logs --file-path=my.log --match="error:pattern1|error:pattern2" --ms-teams-hook="https://outlook.office.com/webhook/xxxxx"
+# match 50 and 40 errors on ltsv log
+go-watch-logs --file-path=my.log --match='HTTP/1.1" 50|HTTP/1.1" 40'
+
+# match 50x and 40x errors on ltsv log, and ignore 404
+go-watch-logs --file-path=my.log --match='HTTP/1.1" 50|HTTP/1.1" 40' --ignore='HTTP/1.1" 404'
+
+# match 50x and run every 60 seconds
+go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
 ```
 
 
@@ -45,6 +58,8 @@ curl -sL https://raw.githubusercontent.com/rakutentech/go-watch-logs/master/inst
 ```sh
   -db-path string
     	path to store db file (default ".go-watch-logs.db")
+  -every uint
+    	run every n seconds (0 to run once)
   -file-path string
     	full path to the log file
   -ignore string
@@ -52,7 +67,7 @@ curl -sL https://raw.githubusercontent.com/rakutentech/go-watch-logs/master/inst
   -match string
     	regex for matching errors (empty to match all lines)
   -min-error int
-    	on minimum error threshold to notify (default 1)
+    	on minimum num of errors should notify (default 1)
   -ms-teams-hook string
     	ms teams webhook
   -version

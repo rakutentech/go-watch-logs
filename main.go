@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/gookit/color"
+	"github.com/jasonlvhit/gocron"
 	gmt "github.com/kevincobain2000/go-msteams/src"
 
 	"github.com/rakutentech/go-watch-logs/pkg"
@@ -17,6 +18,7 @@ type Flags struct {
 	ignore      string
 	dbPath      string
 	minError    int
+	every       uint64
 	msTeamsHook string
 	version     bool
 }
@@ -40,7 +42,16 @@ func main() {
 		color.Danger.Println("file does not exist")
 		return
 	}
+
 	watch()
+	if f.every > 0 {
+		err := gocron.Every(f.every).Second().Do(watch)
+		if err != nil {
+			color.Danger.Println(err)
+			return
+		}
+		<-gocron.Start()
+	}
 }
 
 func watch() {
@@ -71,6 +82,8 @@ func watch() {
 
 	color.Secondary.Print("last line no.................")
 	color.Cyan.Println(watcher.GetLastLineNum())
+
+	fmt.Println()
 
 	if errorCount < 0 {
 		return
@@ -106,7 +119,8 @@ func SetupFlags() {
 	flag.StringVar(&f.dbPath, "db-path", ".go-watch-logs.db", "path to store db file")
 	flag.StringVar(&f.match, "match", "", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
-	flag.IntVar(&f.minError, "min-error", 1, "on minimum error threshold to notify")
+	flag.Uint64Var(&f.every, "every", 0, "run every n seconds (0 to run once)")
+	flag.IntVar(&f.minError, "min-error", 1, "on minimum num of errors should notify")
 	flag.BoolVar(&f.version, "version", false, "")
 
 	flag.StringVar(&f.msTeamsHook, "ms-teams-hook", "", "ms teams webhook")
