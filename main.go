@@ -36,12 +36,12 @@ func main() {
 		return
 	}
 
-	watch()
+	watch(f.filePath)
 	if f.every <= 0 {
 		return
 	}
 
-	if err := gocron.Every(f.every).Second().Do(watch); err != nil {
+	if err := gocron.Every(f.every).Second().Do(watch, f.filePath); err != nil {
 		color.Danger.Println(err)
 		return
 	}
@@ -64,8 +64,8 @@ func validate() error {
 	return nil
 }
 
-func watch() {
-	watcher, err := pkg.NewWatcher(f.dbPath, f.filePath, f.match, f.ignore, f.noCache)
+func watch(filePath string) {
+	watcher, err := pkg.NewWatcher(f.dbPath, filePath, f.match, f.ignore, f.noCache)
 	if err != nil {
 		color.Danger.Println(err)
 		return
