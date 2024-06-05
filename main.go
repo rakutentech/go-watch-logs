@@ -33,17 +33,44 @@ var version = "dev"
 func main() {
 	SetupFlags()
 	if err := validate(); err != nil {
-		return
-	}
-
-	watch(f.filePath)
-	if f.every <= 0 {
-		return
-	}
-
-	if err := gocron.Every(f.every).Second().Do(watch, f.filePath); err != nil {
 		color.Danger.Println(err)
 		return
+	}
+	filePaths, err := pkg.FilesByPattern(f.filePath)
+	if err != nil {
+		color.Danger.Println(err)
+		return
+	}
+	if len(filePaths) == 0 {
+		color.Danger.Println("no files found", f.filePath)
+		return
+	}
+	for _, filePath := range filePaths {
+		isText, err := pkg.IsTextFile(filePath)
+		if err != nil {
+			color.Danger.Println(err)
+			return
+		}
+		if !isText {
+			color.Danger.Println("file is not a text file", filePath)
+			return
+		}
+	}
+
+	for _, filePath := range filePaths {
+		watch(filePath)
+	}
+	if f.every > 0 {
+		cron(filePaths)
+	}
+}
+
+func cron(filePaths []string) {
+	for _, filePath := range filePaths {
+		if err := gocron.Every(f.every).Second().Do(watch, filePath); err != nil {
+			color.Danger.Println(err)
+			return
+		}
 	}
 	<-gocron.Start()
 }
@@ -57,10 +84,6 @@ func validate() error {
 		color.Danger.Println("file-path is required")
 		return fmt.Errorf("filepath")
 	}
-	if _, err := os.Stat(f.filePath); os.IsNotExist(err) {
-		color.Danger.Println("file does not exist")
-		return fmt.Errorf("file does not exist")
-	}
 	return nil
 }
 
@@ -73,7 +96,7 @@ func watch(filePath string) {
 	defer watcher.Close()
 
 	color.Secondary.Print("scanning.....................")
-	fmt.Println(f.filePath)
+	fmt.Println(filePath)
 
 	color.Secondary.Print("1st line no..................")
 	fmt.Println(watcher.GetLastLineNum())
@@ -134,10 +157,10 @@ func SetupFlags() {
 	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
 	flag.Uint64Var(&f.every, "every", 0, "run every n seconds (0 to run once)")
 	flag.IntVar(&f.minError, "min-error", 1, "on minimum num of errors should notify")
-	flag.BoolVar(&f.noCache, "no-cache", false, "")
+	flag.BoolVar(&f.noCache, "no-cache", false, "read back from the start of the file (default false)")
 	flag.BoolVar(&f.version, "version", false, "")
 
-	flag.StringVar(&f.proxy, "proxy", "", "proxy")
+	flag.StringVar(&f.proxy, "proxy", "", "http proxy for webhooks")
 	flag.StringVar(&f.msTeamsHook, "ms-teams-hook", "", "ms teams webhook")
 
 	flag.Parse()
