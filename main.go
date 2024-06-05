@@ -13,12 +13,14 @@ import (
 )
 
 type Flags struct {
-	filePath    string
-	match       string
-	ignore      string
-	dbPath      string
+	filePath string
+	match    string
+	ignore   string
+	dbPath   string
+
 	minError    int
 	every       uint64
+	proxy       string
 	msTeamsHook string
 	version     bool
 }
@@ -123,6 +125,7 @@ func SetupFlags() {
 	flag.IntVar(&f.minError, "min-error", 1, "on minimum num of errors should notify")
 	flag.BoolVar(&f.version, "version", false, "")
 
+	flag.StringVar(&f.proxy, "proxy", "", "proxy")
 	flag.StringVar(&f.msTeamsHook, "ms-teams-hook", "", "ms teams webhook")
 
 	flag.Parse()
@@ -136,5 +139,5 @@ func proxy() string {
 			return os.Getenv(proxyVar)
 		}
 	}
-	return ""
+	return f.proxy
 }
