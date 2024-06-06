@@ -68,7 +68,13 @@ func (w *Watcher) NoCache() error {
 	})
 }
 
-func (w *Watcher) ReadFileAndMatchErrors() (int, string, string, error) {
+type ScanResult struct {
+	ErrorCount int
+	FirstLine  string
+	LastLine   string
+}
+
+func (w *Watcher) Scan() (*ScanResult, error) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 	errorCounts := 0
@@ -77,7 +83,7 @@ func (w *Watcher) ReadFileAndMatchErrors() (int, string, string, error) {
 
 	fileInfo, err := os.Stat(w.filePath)
 	if err != nil {
-		return errorCounts, firstLine, lastLine, err
+		return nil, err
 	}
 
 	currentFileSize := fileInfo.Size()
@@ -89,7 +95,7 @@ func (w *Watcher) ReadFileAndMatchErrors() (int, string, string, error) {
 
 	file, err := os.Open(w.filePath)
 	if err != nil {
-		return errorCounts, firstLine, lastLine, err
+		return nil, err
 	}
 	defer file.Close()
 
@@ -97,11 +103,11 @@ func (w *Watcher) ReadFileAndMatchErrors() (int, string, string, error) {
 
 	re, err := regexp.Compile(w.matchPattern)
 	if err != nil {
-		return errorCounts, firstLine, lastLine, err
+		return nil, err
 	}
 	ri, err := regexp.Compile(w.ignorePattern)
 	if err != nil {
-		return errorCounts, firstLine, lastLine, err
+		return nil, err
 	}
 
 	currentLineNum := 0
@@ -124,15 +130,19 @@ func (w *Watcher) ReadFileAndMatchErrors() (int, string, string, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return errorCounts, firstLine, lastLine, err
+		return nil, err
 	}
 
 	w.lastLineNum = currentLineNum
 	w.lastFileSize = currentFileSize
 	if err := w.saveState(); err != nil {
-		return errorCounts, firstLine, lastLine, err
+		return nil, err
 	}
-	return errorCounts, firstLine, lastLine, nil
+	return &ScanResult{
+		ErrorCount: errorCounts,
+		FirstLine:  firstLine,
+		LastLine:   lastLine,
+	}, nil
 }
 
 func (w *Watcher) GetLastLineNum() int {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/jasonlvhit/gocron"
+	"github.com/k0kubun/pp"
 	gmt "github.com/kevincobain2000/go-msteams/src"
 
 	"github.com/rakutentech/go-watch-logs/pkg"
@@ -31,15 +32,12 @@ var f Flags
 var version = "dev"
 
 func main() {
-	SetupFlags()
-	if f.version {
-		color.Secondary.Println(version)
-		return
-	}
-	if err := validate(); err != nil {
-		color.Danger.Println(err)
-		return
-	}
+	flags()
+	parseProxy()
+	wantsVersion()
+	validate()
+	pp.Println(f)
+
 	filePaths, err := pkg.FilesByPattern(f.filePath)
 	if err != nil {
 		color.Danger.Println(err)
@@ -79,12 +77,11 @@ func cron(filePaths []string) {
 	<-gocron.Start()
 }
 
-func validate() error {
+func validate() {
 	if f.filePath == "" {
 		color.Danger.Println("file-path is required")
-		return fmt.Errorf("filepath")
+		os.Exit(1)
 	}
-	return nil
 }
 
 func watch(filePath string) {
@@ -101,33 +98,33 @@ func watch(filePath string) {
 	color.Secondary.Print("1st line no.................. ")
 	fmt.Println(watcher.GetLastLineNum())
 
-	errorCount, firstLine, lastLine, err := watcher.ReadFileAndMatchErrors()
+	result, err := watcher.Scan()
 	if err != nil {
 		color.Danger.Println(err)
 		return
 	}
 	color.Secondary.Print("error count.................. ")
-	color.Danger.Println(errorCount)
+	color.Danger.Println(result.ErrorCount)
 
 	// first line
 	color.Secondary.Print("1st line..................... ")
-	fmt.Println(pkg.Truncate(firstLine, 50))
+	fmt.Println(pkg.Truncate(result.FirstLine, 50))
 
 	color.Secondary.Print("last line.................... ")
-	fmt.Println(pkg.Truncate(lastLine, 50))
+	fmt.Println(pkg.Truncate(result.LastLine, 50))
 
 	color.Secondary.Print("last line no................. ")
 	fmt.Println(watcher.GetLastLineNum())
 
 	fmt.Println()
 
-	if errorCount < 0 {
+	if result.ErrorCount < 0 {
 		return
 	}
-	if errorCount < f.minError {
+	if result.ErrorCount < f.minError {
 		return
 	}
-	notify(errorCount, watcher.GetLastLineNum(), firstLine, lastLine)
+	notify(result.ErrorCount, watcher.GetLastLineNum(), result.FirstLine, result.LastLine)
 }
 
 func notify(errorCount, lastLineNum int, firstLine, lastLine string) {
@@ -143,7 +140,7 @@ func notify(errorCount, lastLineNum int, firstLine, lastLine string) {
 		subject += fmt.Sprintf("ignore: <code>%s</code>", f.ignore)
 		subject += "<br>"
 		subject += fmt.Sprintf("line no: <code>%d</code>", lastLineNum)
-		err := gmt.Send(hostname, f.filePath, subject, "red", teamsMsg, f.msTeamsHook, proxy())
+		err := gmt.Send(hostname, f.filePath, subject, "red", teamsMsg, f.msTeamsHook, f.proxy)
 		if err != nil {
 			color.Danger.Println(err)
 		}
@@ -152,9 +149,9 @@ func notify(errorCount, lastLineNum int, firstLine, lastLine string) {
 	}
 }
 
-func SetupFlags() {
+func flags() {
 	flag.StringVar(&f.filePath, "file-path", "", "full path to the log file")
-	flag.StringVar(&f.dbPath, "db-path", ".go-watch-logs.db", "path to store db file")
+	flag.StringVar(&f.dbPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file")
 	flag.StringVar(&f.match, "match", "", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
 	flag.Uint64Var(&f.every, "every", 0, "run every n seconds (0 to run once)")
@@ -168,13 +165,16 @@ func SetupFlags() {
 	flag.Parse()
 }
 
-func proxy() string {
-	proxyVars := []string{"https_proxy", "http_proxy", "HTTPS_PROXY", "HTTP_PROXY"}
-
-	for _, proxyVar := range proxyVars {
-		if os.Getenv(proxyVar) != "" {
-			return os.Getenv(proxyVar)
-		}
+func parseProxy() string {
+	systemProxy := pkg.SystemProxy()
+	if systemProxy != "" && f.proxy == "" {
+		f.proxy = systemProxy
 	}
 	return f.proxy
+}
+func wantsVersion() {
+	if f.version {
+		color.Secondary.Println(version)
+		os.Exit(0)
+	}
 }

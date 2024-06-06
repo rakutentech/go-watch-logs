@@ -56,11 +56,11 @@ error:1`
 	assert.NoError(t, err)
 	defer watcher.Close()
 
-	count, first, last, err := watcher.ReadFileAndMatchErrors()
+	result, err := watcher.Scan()
 	assert.NoError(t, err)
-	assert.Equal(t, 2, count)
-	assert.Equal(t, "error:1", first)
-	assert.Equal(t, "error:1", last)
+	assert.Equal(t, 2, result.ErrorCount)
+	assert.Equal(t, "error:1", result.FirstLine)
+	assert.Equal(t, "error:1", result.LastLine)
 }
 
 func TestSetAndGetLastLineNum(t *testing.T) {
@@ -116,11 +116,11 @@ line2`
 	assert.NoError(t, err)
 	defer watcher.Close()
 
-	count, first, last, err := watcher.ReadFileAndMatchErrors()
+	result, err := watcher.Scan()
 	assert.NoError(t, err)
-	assert.Equal(t, 1, count)
-	assert.Equal(t, "error:1", first)
-	assert.Equal(t, "error:1", last)
+	assert.Equal(t, 1, result.ErrorCount)
+	assert.Equal(t, "error:1", result.FirstLine)
+	assert.Equal(t, "error:1", result.LastLine)
 
 	// Simulate log rotation by truncating the file
 	err = os.WriteFile(filePath, []byte("new content\nerror:1\n"), 0644) // nolint: gosec
@@ -129,11 +129,11 @@ line2`
 	// Ensure Watcher detects log rotation
 	watcher.SetLastLineNum(0) // Reset line number to simulate log rotation
 
-	count, first, last, err = watcher.ReadFileAndMatchErrors()
+	result, err = watcher.Scan()
 	assert.NoError(t, err)
-	assert.Equal(t, 1, count)
-	assert.Equal(t, "error:1", first)
-	assert.Equal(t, "error:1", last)
+	assert.Equal(t, 1, result.ErrorCount)
+	assert.Equal(t, "error:1", result.FirstLine)
+	assert.Equal(t, "error:1", result.LastLine)
 }
 
 func BenchmarkReadFileAndMatchErrors(b *testing.B) {
@@ -159,7 +159,7 @@ error:1`
 	defer watcher.Close()
 
 	for i := 0; i < b.N; i++ {
-		_, _, _, err := watcher.ReadFileAndMatchErrors()
+		_, err := watcher.Scan()
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -226,12 +226,12 @@ line2`
 	}
 	defer watcher.Close()
 
-	count, first, last, err := watcher.ReadFileAndMatchErrors()
+	result, err := watcher.Scan()
 	if err != nil {
 		b.Fatal(err)
 	}
-	if count != 1 || first != "error:1" || last != "error:1" {
-		b.Fatalf("Unexpected results: count=%d, first=%s, last=%s", count, first, last)
+	if result.ErrorCount != 1 || result.FirstLine != "error:1" || result.LastLine != "error:1" {
+		b.Fatalf("Unexpected results: count=%d, first=%s, last=%s", result.ErrorCount, result.FirstLine, result.LastLine)
 	}
 
 	err = os.WriteFile(filePath, []byte("new content\nerror:1\n"), 0644) // nolint: gosec
@@ -242,7 +242,7 @@ line2`
 	watcher.SetLastLineNum(0)
 
 	for i := 0; i < b.N; i++ {
-		_, _, _, err := watcher.ReadFileAndMatchErrors()
+		_, err := watcher.Scan()
 		if err != nil {
 			b.Fatal(err)
 		}
