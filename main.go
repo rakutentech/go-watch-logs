@@ -127,10 +127,10 @@ func watch(filePath string) {
 	if errorCount < f.minError {
 		return
 	}
-	notify(errorCount, firstLine, lastLine)
+	notify(errorCount, watcher.GetLastLineNum(), firstLine, lastLine)
 }
 
-func notify(errorCount int, firstLine, lastLine string) {
+func notify(errorCount, lastLineNum int, firstLine, lastLine string) {
 	if f.msTeamsHook != "" {
 		teamsMsg := fmt.Sprintf("total errors: %d\n\n", errorCount)
 		teamsMsg += fmt.Sprintf("1st error<pre>\n\n%s</pre>\n\nlast error<pre>\n\n%s</pre>", firstLine, lastLine)
@@ -141,6 +141,8 @@ func notify(errorCount int, firstLine, lastLine string) {
 		subject := fmt.Sprintf("match: <code>%s</code>", f.match)
 		subject += "<br>"
 		subject += fmt.Sprintf("ignore: <code>%s</code>", f.ignore)
+		subject += "<br>"
+		subject += fmt.Sprintf("line no: <code>%d</code>", lastLineNum)
 		err := gmt.Send(hostname, f.filePath, subject, "red", teamsMsg, f.msTeamsHook, proxy())
 		if err != nil {
 			color.Danger.Println(err)
