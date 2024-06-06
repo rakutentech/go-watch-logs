@@ -32,6 +32,10 @@ var version = "dev"
 
 func main() {
 	SetupFlags()
+	if f.version {
+		color.Secondary.Println(version)
+		return
+	}
 	if err := validate(); err != nil {
 		color.Danger.Println(err)
 		return
@@ -76,10 +80,6 @@ func cron(filePaths []string) {
 }
 
 func validate() error {
-	if f.version {
-		color.Secondary.Println(version)
-		return fmt.Errorf("version")
-	}
 	if f.filePath == "" {
 		color.Danger.Println("file-path is required")
 		return fmt.Errorf("filepath")
