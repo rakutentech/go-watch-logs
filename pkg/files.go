@@ -13,6 +13,15 @@ func IsTextFile(filename string) (bool, error) {
 	}
 	defer file.Close()
 
+	// Check if the file is empty
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return false, err
+	}
+	if fileInfo.Size() == 0 {
+		return true, nil
+	}
+
 	buffer := make([]byte, 512)
 	n, err := file.Read(buffer)
 	if err != nil {

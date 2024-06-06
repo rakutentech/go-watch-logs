@@ -95,10 +95,10 @@ func watch(filePath string) {
 	}
 	defer watcher.Close()
 
-	color.Secondary.Print("scanning.....................")
+	color.Secondary.Print("scanning..................... ")
 	fmt.Println(filePath)
 
-	color.Secondary.Print("1st line no..................")
+	color.Secondary.Print("1st line no.................. ")
 	fmt.Println(watcher.GetLastLineNum())
 
 	errorCount, firstLine, lastLine, err := watcher.ReadFileAndMatchErrors()
@@ -106,17 +106,17 @@ func watch(filePath string) {
 		color.Danger.Println(err)
 		return
 	}
-	color.Secondary.Print("error count..................")
+	color.Secondary.Print("error count.................. ")
 	color.Danger.Println(errorCount)
 
 	// first line
-	color.Secondary.Print("1st line.....................")
+	color.Secondary.Print("1st line..................... ")
 	fmt.Println(pkg.Truncate(firstLine, 50))
 
-	color.Secondary.Print("last line....................")
+	color.Secondary.Print("last line.................... ")
 	fmt.Println(pkg.Truncate(lastLine, 50))
 
-	color.Secondary.Print("last line no.................")
+	color.Secondary.Print("last line no................. ")
 	fmt.Println(watcher.GetLastLineNum())
 
 	fmt.Println()
@@ -145,7 +145,7 @@ func notify(errorCount int, firstLine, lastLine string) {
 		if err != nil {
 			color.Danger.Println(err)
 		}
-		color.Secondary.Print("Sent to Teams................")
+		color.Secondary.Print("Sent to Teams................ ")
 		color.Success.Println("Done")
 	}
 }
