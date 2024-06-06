@@ -82,15 +82,11 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
 
 ## Performance Notes
 
-```
-BenchmarkReadFileAndMatchErrors-10    	   10328	    113576 ns/op	    8543 B/op	      49 allocs/op
-BenchmarkReadFileAndMatchErrors-10    	   10000	    115039 ns/op	    8543 B/op	      49 allocs/op
-BenchmarkSetAndGetLastLineNum-10      	 3247788	       369.2 ns/op	     490 B/op	       8 allocs/op
-BenchmarkSetAndGetLastLineNum-10      	 3224370	       370.3 ns/op	     490 B/op	       8 allocs/op
-BenchmarkLoadAndSaveState-10          	   14349	     74996 ns/op	   11479 B/op	     103 allocs/op
-BenchmarkLoadAndSaveState-10          	   15531	     79613 ns/op	   12916 B/op	     177 allocs/op
-BenchmarkLogRotation-10               	    9644	    128297 ns/op	   10326 B/op	      89 allocs/op
-BenchmarkLogRotation-10               	    9604	    126398 ns/op	   10295 B/op	      88 allocs/op
+```sh
+BenchmarkReadFileAndMatchErrors-10    	   10816	    112233 ns/op	    8591 B/op	      50 allocs/op
+BenchmarkSetAndGetLastLineNum-10      	 3231630	       371.3 ns/op	     490 B/op	       8 allocs/op
+BenchmarkLoadAndSaveState-10          	   15504	     78520 ns/op	   11563 B/op	     104 allocs/op
+BenchmarkLogRotation-10               	    9450	    122679 ns/op	    9445 B/op	      69 allocs/op
 ```
 
 
