@@ -6,7 +6,7 @@
   Zero memory allocation<br>
 </p>
 
-**Quick Setup:** One command to install Go and manage versions.
+**Quick Setup:** One command to install.
 
 **Hassle Free:** Doesn't require root or sudo.
 
