@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/tidwall/buntdb"
@@ -22,6 +23,7 @@ type Watcher struct {
 	lastLineNum     int
 	lastFileSize    int64
 	mutex           sync.Mutex
+	alreadyScanned  int64
 }
 
 func NewWatcher(
@@ -57,6 +59,7 @@ func NewWatcher(
 
 	return watcher, nil
 }
+
 func (w *Watcher) NoCache() error {
 	return w.db.Update(func(tx *buntdb.Tx) error {
 		_, _, err := tx.Set(w.lastLineKey, "0", nil)
@@ -91,6 +94,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	// Detect log rotation
 	if currentFileSize < w.lastFileSize {
 		w.lastLineNum = 0
+		w.alreadyScanned = 0
 	}
 
 	file, err := os.Open(w.filePath)
@@ -98,6 +102,11 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		return nil, err
 	}
 	defer file.Close()
+
+	_, err = file.Seek(w.alreadyScanned, 0)
+	if err != nil {
+		return nil, err
+	}
 
 	scanner := bufio.NewScanner(file)
 
@@ -110,14 +119,13 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		return nil, err
 	}
 
-	currentLineNum := 0
 	for scanner.Scan() {
-		currentLineNum++
-		if currentLineNum <= w.lastLineNum {
-			continue
-		}
 		line := scanner.Text()
 		if w.ignorePattern != "" && ri.MatchString(line) {
+			w.alreadyScanned += int64(len(line) + 1) // +1 for newline character
+			if strings.HasSuffix(line, "\r") {
+				w.alreadyScanned++
+			}
 			continue
 		}
 		if re.MatchString(line) {
@@ -127,13 +135,16 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 			lastLine = line
 			errorCounts++
 		}
+		w.alreadyScanned += int64(len(line) + 1) // +1 for newline character
+		if strings.HasSuffix(line, "\r") {
+			w.alreadyScanned++
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
 
-	w.lastLineNum = currentLineNum
 	w.lastFileSize = currentFileSize
 	if err := w.saveState(); err != nil {
 		return nil, err
@@ -180,6 +191,16 @@ func (w *Watcher) loadState() error {
 			return err
 		}
 		fmt.Sscanf(lastFileSizeStr, "%d", &w.lastFileSize) // nolint: errcheck
+
+		alreadyScannedStr, err := tx.Get(w.filePath + "_scanned")
+		if errors.Is(err, buntdb.ErrNotFound) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		fmt.Sscanf(alreadyScannedStr, "%d", &w.alreadyScanned) // nolint: errcheck
+
 		return nil
 	})
 }
@@ -191,6 +212,10 @@ func (w *Watcher) saveState() error {
 			return err
 		}
 		_, _, err = tx.Set(w.lastFileSizeKey, fmt.Sprintf("%d", w.lastFileSize), nil)
+		if err != nil {
+			return err
+		}
+		_, _, err = tx.Set(w.filePath+"_scanned", fmt.Sprintf("%d", w.alreadyScanned), nil)
 		return err
 	})
 }
