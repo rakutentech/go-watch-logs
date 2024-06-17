@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"strings"
 	"sync"
 
 	"github.com/tidwall/buntdb"
@@ -123,9 +122,6 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		line := scanner.Text()
 		if w.ignorePattern != "" && ri.MatchString(line) {
 			w.alreadyScanned += int64(len(line) + 1) // +1 for newline character
-			if strings.HasSuffix(line, "\r") {
-				w.alreadyScanned++
-			}
 			continue
 		}
 		if re.MatchString(line) {
@@ -136,9 +132,6 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 			errorCounts++
 		}
 		w.alreadyScanned += int64(len(line) + 1) // +1 for newline character
-		if strings.HasSuffix(line, "\r") {
-			w.alreadyScanned++
-		}
 	}
 
 	if err := scanner.Err(); err != nil {
