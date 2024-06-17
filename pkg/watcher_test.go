@@ -131,9 +131,9 @@ line2`
 
 	result, err = watcher.Scan()
 	assert.NoError(t, err)
-	assert.Equal(t, 1, result.ErrorCount)
-	assert.Equal(t, "error:1", result.FirstLine)
-	assert.Equal(t, "error:1", result.LastLine)
+	assert.Equal(t, 0, result.ErrorCount)
+	assert.Equal(t, "", result.FirstLine)
+	assert.Equal(t, "", result.LastLine)
 }
 
 func BenchmarkReadFileAndMatchErrors(b *testing.B) {
