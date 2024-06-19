@@ -139,6 +139,8 @@ func notify(errorCount, lastLineNum int, firstLine, lastLine string) {
 		subject += "<br>"
 		subject += fmt.Sprintf("ignore: <code>%s</code>", f.ignore)
 		subject += "<br>"
+		subject += fmt.Sprintf("min error: <code>%d</code>", f.minError)
+		subject += "<br>"
 		subject += fmt.Sprintf("line no: <code>%d</code>", lastLineNum)
 		err := gmt.Send(hostname, f.filePath, subject, "red", teamsMsg, f.msTeamsHook, f.proxy)
 		if err != nil {
