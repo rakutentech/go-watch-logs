@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/gookit/color"
 	"github.com/tidwall/buntdb"
 )
 
@@ -31,9 +32,24 @@ func NewWatcher(
 	ignorePattern string,
 	noCache bool,
 ) (*Watcher, error) {
+	if dbName == "" {
+		return nil, errors.New("dbName is required")
+	}
 	db, err := buntdb.Open(dbName)
 	if err != nil {
-		return nil, err
+		if err.Error() == "invalid database" {
+			color.Danger.Println(err.Error(), "recreating the database")
+			err = os.Remove(dbName)
+			if err != nil {
+				return nil, err
+			}
+			db, err = buntdb.Open(dbName)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
 	}
 
 	watcher := &Watcher{
