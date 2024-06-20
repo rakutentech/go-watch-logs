@@ -132,15 +132,15 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		if currentLineNum <= w.lastLineNum {
 			continue
 		}
-		line := scanner.Text()
-		if w.ignorePattern != "" && ri.MatchString(line) {
+		line := scanner.Bytes()
+		if w.ignorePattern != "" && ri.Match(line) {
 			continue
 		}
-		if re.MatchString(line) {
+		if re.Match(line) {
 			if firstLine == "" {
-				firstLine = line
+				firstLine = string(line)
 			}
-			lastLine = line
+			lastLine = string(line)
 			errorCounts++
 		}
 	}
