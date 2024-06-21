@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"sync"
@@ -34,6 +35,11 @@ func NewWatcher(
 ) (*Watcher, error) {
 	if dbName == "" {
 		return nil, errors.New("dbName is required")
+	}
+	// add a suffix to the database name, is just in case some, cuz we are doing os remove
+	// and don't want to remove any other file on mis configuration
+	if dbName != ":memory:" {
+		dbName += ".buntdb"
 	}
 	db, err := buntdb.Open(dbName)
 	if err != nil {
@@ -106,7 +112,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 
 	// Detect log rotation
 	if currentFileSize < w.lastFileSize {
-		w.lastLineNum = 0
+		w.lastFileSize = 0
 	}
 
 	file, err := os.Open(w.filePath)
@@ -115,7 +121,9 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	}
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+	if _, err := file.Seek(w.lastFileSize, io.SeekStart); err != nil {
+		return nil, err
+	}
 
 	re, err := regexp.Compile(w.matchPattern)
 	if err != nil {
@@ -126,21 +134,22 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		return nil, err
 	}
 
-	currentLineNum := 0
+	scanner := bufio.NewScanner(file)
+	currentLineNum := 1
+	bytesRead := w.lastFileSize
+
 	for scanner.Scan() {
+		line := scanner.Bytes()
+		bytesRead += int64(len(line)) + 1 // Adding 1 for the newline character
 		currentLineNum++
-		if currentLineNum <= w.lastLineNum {
+		if w.ignorePattern != "" && ri.Match(line) {
 			continue
 		}
-		line := scanner.Text()
-		if w.ignorePattern != "" && ri.MatchString(line) {
-			continue
-		}
-		if re.MatchString(line) {
+		if re.Match(line) {
 			if firstLine == "" {
-				firstLine = line
+				firstLine = string(line)
 			}
-			lastLine = line
+			lastLine = string(line)
 			errorCounts++
 		}
 	}
@@ -150,7 +159,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	}
 
 	w.lastLineNum = currentLineNum
-	w.lastFileSize = currentFileSize
+	w.lastFileSize = bytesRead
 	if err := w.saveState(); err != nil {
 		return nil, err
 	}
@@ -159,22 +168,6 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		FirstLine:  firstLine,
 		LastLine:   lastLine,
 	}, nil
-}
-
-func (w *Watcher) GetLastLineNum() int {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-	return w.lastLineNum
-}
-
-func (w *Watcher) SetLastLineNum(lineNum int) {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-	w.lastLineNum = lineNum
-	err := w.saveState()
-	if err != nil {
-		fmt.Println("Error saving state:", err)
-	}
 }
 
 func (w *Watcher) loadState() error {

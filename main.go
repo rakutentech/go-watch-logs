@@ -19,7 +19,7 @@ type Flags struct {
 	ignore   string
 	dbPath   string
 
-	minError    int
+	min         int
 	every       uint64
 	proxy       string
 	msTeamsHook string
@@ -95,9 +95,6 @@ func watch(filePath string) {
 	color.Secondary.Print("scanning..................... ")
 	fmt.Println(filePath)
 
-	color.Secondary.Print("1st line no.................. ")
-	fmt.Println(watcher.GetLastLineNum())
-
 	result, err := watcher.Scan()
 	if err != nil {
 		color.Danger.Println(err)
@@ -113,21 +110,18 @@ func watch(filePath string) {
 	color.Secondary.Print("last line.................... ")
 	fmt.Println(pkg.Truncate(result.LastLine, 50))
 
-	color.Secondary.Print("last line no................. ")
-	fmt.Println(watcher.GetLastLineNum())
-
 	fmt.Println()
 
 	if result.ErrorCount < 0 {
 		return
 	}
-	if result.ErrorCount < f.minError {
+	if result.ErrorCount < f.min {
 		return
 	}
-	notify(result.ErrorCount, watcher.GetLastLineNum(), result.FirstLine, result.LastLine)
+	notify(result.ErrorCount, result.FirstLine, result.LastLine)
 }
 
-func notify(errorCount, lastLineNum int, firstLine, lastLine string) {
+func notify(errorCount int, firstLine, lastLine string) {
 	if f.msTeamsHook != "" {
 		teamsMsg := fmt.Sprintf("total errors: %d\n\n", errorCount)
 		teamsMsg += fmt.Sprintf("1st error<pre>\n\n%s</pre>\n\nlast error<pre>\n\n%s</pre>", firstLine, lastLine)
@@ -139,9 +133,7 @@ func notify(errorCount, lastLineNum int, firstLine, lastLine string) {
 		subject += "<br>" // nolint: goconst
 		subject += fmt.Sprintf("ignore: <code>%s</code>", f.ignore)
 		subject += "<br>" // nolint: goconst
-		subject += fmt.Sprintf("min error: <code>%d</code>", f.minError)
-		subject += "<br>" // nolint: goconst
-		subject += fmt.Sprintf("line no: <code>%d</code>", lastLineNum)
+		subject += fmt.Sprintf("min error: <code>%d</code>", f.min)
 		err := gmt.Send(hostname, f.filePath, subject, "red", teamsMsg, f.msTeamsHook, f.proxy)
 		if err != nil {
 			color.Danger.Println(err)
@@ -157,7 +149,7 @@ func flags() {
 	flag.StringVar(&f.match, "match", "", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
 	flag.Uint64Var(&f.every, "every", 0, "run every n seconds (0 to run once)")
-	flag.IntVar(&f.minError, "min-error", 1, "on minimum num of errors should notify")
+	flag.IntVar(&f.min, "min", 1, "on minimum num of matches, it should notify")
 	flag.BoolVar(&f.noCache, "no-cache", false, "read back from the start of the file (default false)")
 	flag.BoolVar(&f.version, "version", false, "")
 

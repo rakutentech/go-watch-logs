@@ -20,5 +20,6 @@ tmp/
 *.pid
 *.log
 *.db
+*.buntdb
 .DS_Store
 go-watch-logs
