@@ -66,8 +66,8 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
     	regex for ignoring errors (empty to ignore none)
   -match string
     	regex for matching errors (empty to match all lines)
-  -min-error int
-    	on minimum num of errors should notify (default 1)
+  -min int
+    	on minimum num of matches, it should notify (default 1)
   -ms-teams-hook string
     	ms teams webhook
   -no-cache
