@@ -3,7 +3,7 @@
 </h1>
 <p align="center">
   Monitor static logs file for patterns and send alerts to MS Teams<br>
-  Zero memory allocation<br>
+  Low Memory Footprint<br>
 </p>
 
 **Quick Setup:** One command to install.
@@ -66,8 +66,8 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
     	regex for ignoring errors (empty to ignore none)
   -match string
     	regex for matching errors (empty to match all lines)
-  -min-error int
-    	on minimum num of errors should notify (default 1)
+  -min int
+    	on minimum num of matches, it should notify (default 1)
   -ms-teams-hook string
     	ms teams webhook
   -no-cache
@@ -83,10 +83,9 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
 ## Performance Notes
 
 ```sh
-BenchmarkReadFileAndMatchErrors-10    	   10816	    112233 ns/op	    8591 B/op	      50 allocs/op
-BenchmarkSetAndGetLastLineNum-10      	 3231630	       371.3 ns/op	     490 B/op	       8 allocs/op
-BenchmarkLoadAndSaveState-10          	   15504	     78520 ns/op	   11563 B/op	     104 allocs/op
-BenchmarkLogRotation-10               	    9450	    122679 ns/op	    9445 B/op	      69 allocs/op
+BenchmarkReadFileAndMatchErrors-10    	   10215	    122666 ns/op	    8684 B/op	      53 allocs/op
+BenchmarkLoadAndSaveState-10          	   15241	     82295 ns/op	   10562 B/op	      38 allocs/op
+BenchmarkLogRotation-10               	    9712	    143824 ns/op	    9707 B/op	      74 allocs/op
 ```
 
 
