@@ -74,7 +74,10 @@ func cron(filePaths []string) {
 			return
 		}
 	}
-	gocron.Every(f.every).Second().Do(pkg.PrintMemUsage)
+	if err := gocron.Every(f.every).Second().Do(pkg.PrintMemUsage); err != nil {
+		slog.Error("Error scheduling memory usage", "error", err.Error())
+		return
+	}
 	<-gocron.Start()
 }
 
