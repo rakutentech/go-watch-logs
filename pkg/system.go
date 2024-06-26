@@ -1,7 +1,9 @@
 package pkg
 
 import (
+	"log/slog"
 	"os"
+	"runtime"
 )
 
 func SystemProxy() string {
@@ -13,4 +15,17 @@ func SystemProxy() string {
 		}
 	}
 	return ""
+}
+
+func PrintMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	slog.Info("Memory Usage",
+		"Alloc (MB)", bToMb(m.Alloc),
+		"Sys", bToMb(m.Sys),
+	)
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }

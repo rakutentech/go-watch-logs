@@ -2,19 +2,18 @@ package pkg
 
 import (
 	"bufio"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"regexp"
-	"sync"
 
-	"github.com/gookit/color"
-	"github.com/tidwall/buntdb"
+	_ "github.com/mattn/go-sqlite3" // nolint: revive
 )
 
 type Watcher struct {
-	db              *buntdb.DB
+	db              *sql.DB
 	filePath        string
 	lastLineKey     string
 	lastFileSizeKey string
@@ -23,7 +22,6 @@ type Watcher struct {
 	noCache         bool
 	lastLineNum     int
 	lastFileSize    int64
-	mutex           sync.Mutex
 }
 
 func NewWatcher(
@@ -36,26 +34,12 @@ func NewWatcher(
 	if dbName == "" {
 		return nil, errors.New("dbName is required")
 	}
-	// add a suffix to the database name, is just in case some, cuz we are doing os remove
-	// and don't want to remove any other file on mis configuration
-	if dbName != ":memory:" {
-		dbName += ".buntdb"
-	}
-	db, err := buntdb.Open(dbName)
+
+	dbName += ".sqlite"
+
+	db, err := sql.Open("sqlite3", dbName)
 	if err != nil {
-		if err.Error() == "invalid database" {
-			color.Danger.Println(err.Error(), "recreating the database")
-			err = os.Remove(dbName)
-			if err != nil {
-				return nil, err
-			}
-			db, err = buntdb.Open(dbName)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	watcher := &Watcher{
@@ -67,6 +51,10 @@ func NewWatcher(
 		lastLineKey:     Hash(filePath + "llk"),
 		lastFileSizeKey: Hash(filePath + "llks"),
 	}
+	if err := watcher.CreateTableIfNotExists(); err != nil {
+		return nil, err
+	}
+
 	if watcher.noCache {
 		if err := watcher.NoCache(); err != nil {
 			return nil, err
@@ -79,15 +67,21 @@ func NewWatcher(
 
 	return watcher, nil
 }
+
+func (w *Watcher) CreateTableIfNotExists() error {
+	// Create table if not exists
+	_, err := w.db.Exec(`
+	CREATE TABLE IF NOT EXISTS watcher_state (
+		key TEXT PRIMARY KEY,
+		value TEXT
+	)`)
+	return err
+}
 func (w *Watcher) NoCache() error {
-	return w.db.Update(func(tx *buntdb.Tx) error {
-		_, _, err := tx.Set(w.lastLineKey, "0", nil)
-		if err != nil {
-			return err
-		}
-		_, _, err = tx.Set(w.lastFileSizeKey, "0", nil)
-		return err
-	})
+	_, err := w.db.Exec("INSERT OR REPLACE INTO watcher_state (key, value) VALUES (?, ?), (?, ?)",
+		w.lastLineKey, "0",
+		w.lastFileSizeKey, "0")
+	return err
 }
 
 type ScanResult struct {
@@ -97,8 +91,6 @@ type ScanResult struct {
 }
 
 func (w *Watcher) Scan() (*ScanResult, error) {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
 	errorCounts := 0
 	firstLine := ""
 	lastLine := ""
@@ -135,7 +127,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	}
 
 	scanner := bufio.NewScanner(file)
-	currentLineNum := 1
+	currentLineNum := w.lastLineNum
 	bytesRead := w.lastFileSize
 
 	for scanner.Scan() {
@@ -171,37 +163,28 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 }
 
 func (w *Watcher) loadState() error {
-	return w.db.View(func(tx *buntdb.Tx) error {
-		lastLineStr, err := tx.Get(w.lastLineKey)
-		if errors.Is(err, buntdb.ErrNotFound) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		fmt.Sscanf(lastLineStr, "%d", &w.lastLineNum) // nolint: errcheck
+	var lastLineStr, lastFileSizeStr string
 
-		lastFileSizeStr, err := tx.Get(w.lastFileSizeKey)
-		if errors.Is(err, buntdb.ErrNotFound) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		fmt.Sscanf(lastFileSizeStr, "%d", &w.lastFileSize) // nolint: errcheck
-		return nil
-	})
+	err := w.db.QueryRow("SELECT value FROM watcher_state WHERE key = ?", w.lastLineKey).Scan(&lastLineStr)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	fmt.Sscanf(lastLineStr, "%d", &w.lastLineNum) // nolint: errcheck
+
+	err = w.db.QueryRow("SELECT value FROM watcher_state WHERE key = ?", w.lastFileSizeKey).Scan(&lastFileSizeStr)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	fmt.Sscanf(lastFileSizeStr, "%d", &w.lastFileSize) // nolint: errcheck
+
+	return nil
 }
 
 func (w *Watcher) saveState() error {
-	return w.db.Update(func(tx *buntdb.Tx) error {
-		_, _, err := tx.Set(w.lastLineKey, fmt.Sprintf("%d", w.lastLineNum), nil)
-		if err != nil {
-			return err
-		}
-		_, _, err = tx.Set(w.lastFileSizeKey, fmt.Sprintf("%d", w.lastFileSize), nil)
-		return err
-	})
+	_, err := w.db.Exec("INSERT OR REPLACE INTO watcher_state (key, value) VALUES (?, ?), (?, ?)",
+		w.lastLineKey, fmt.Sprintf("%d", w.lastLineNum),
+		w.lastFileSizeKey, fmt.Sprintf("%d", w.lastFileSize))
+	return err
 }
 
 func (w *Watcher) Close() error {
