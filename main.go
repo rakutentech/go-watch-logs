@@ -21,6 +21,7 @@ type Flags struct {
 	min         int
 	every       uint64
 	proxy       string
+	logLevel    int
 	msTeamsHook string
 	noCache     bool
 	version     bool
@@ -31,12 +32,24 @@ var f Flags
 var version = "dev"
 
 func main() {
-	pkg.SetupLoggingStdout()
 	flags()
+	pkg.SetupLoggingStdout(f.logLevel)
 	parseProxy()
 	wantsVersion()
 	validate()
-	slog.Info("Flags", "filePath", f.filePath, "match", f.match, "ignore", f.ignore, "dbPath", f.dbPath, "min", f.min, "every", f.every, "noCache", f.noCache, "version", f.version, "proxy", f.proxy, "msTeamsHook", f.msTeamsHook)
+	slog.Info("Flags",
+		"filePath", f.filePath,
+		"match", f.match,
+		"ignore", f.ignore,
+		"dbPath", f.dbPath,
+		"min", f.min,
+		"every", f.every,
+		"noCache", f.noCache,
+		"version", f.version,
+		"loglevel", f.logLevel,
+		"proxy", f.proxy,
+		"msTeamsHook", f.msTeamsHook,
+	)
 
 	filePaths, err := pkg.FilesByPattern(f.filePath)
 	if err != nil {
@@ -148,6 +161,7 @@ func flags() {
 	flag.StringVar(&f.match, "match", "", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
 	flag.Uint64Var(&f.every, "every", 0, "run every n seconds (0 to run once)")
+	flag.IntVar(&f.logLevel, "log-level", 0, "log level (0=info, 1=debug)")
 	flag.IntVar(&f.min, "min", 1, "on minimum num of matches, it should notify")
 	flag.BoolVar(&f.noCache, "no-cache", false, "read back from the start of the file (default false)")
 	flag.BoolVar(&f.version, "version", false, "")
