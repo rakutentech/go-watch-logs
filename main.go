@@ -3,11 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 
-	"github.com/gookit/color"
 	"github.com/jasonlvhit/gocron"
-	"github.com/k0kubun/pp"
 	gmt "github.com/kevincobain2000/go-msteams/src"
 
 	"github.com/rakutentech/go-watch-logs/pkg"
@@ -32,29 +31,30 @@ var f Flags
 var version = "dev"
 
 func main() {
+	pkg.SetupLoggingStdout()
 	flags()
 	parseProxy()
 	wantsVersion()
 	validate()
-	pp.Println(f)
+	slog.Info("Flags", "filePath", f.filePath, "match", f.match, "ignore", f.ignore, "dbPath", f.dbPath, "min", f.min, "every", f.every, "noCache", f.noCache, "version", f.version, "proxy", f.proxy, "msTeamsHook", f.msTeamsHook)
 
 	filePaths, err := pkg.FilesByPattern(f.filePath)
 	if err != nil {
-		color.Danger.Println(err)
+		slog.Error("Error finding files", "error", err.Error())
 		return
 	}
 	if len(filePaths) == 0 {
-		color.Danger.Println("no files found", f.filePath)
+		slog.Error("No files found", "filePath", f.filePath)
 		return
 	}
 	for _, filePath := range filePaths {
 		isText, err := pkg.IsTextFile(filePath)
 		if err != nil {
-			color.Danger.Println(err)
+			slog.Error("Error checking if file is text", "error", err.Error(), "filePath", filePath)
 			return
 		}
 		if !isText {
-			color.Danger.Println("file is not a text file", filePath)
+			slog.Error("File is not a text file", "filePath", filePath)
 			return
 		}
 	}
@@ -70,16 +70,17 @@ func main() {
 func cron(filePaths []string) {
 	for _, filePath := range filePaths {
 		if err := gocron.Every(f.every).Second().Do(watch, filePath); err != nil {
-			color.Danger.Println(err)
+			slog.Error("Error scheduling watch", "error", err.Error(), "filePath", filePath)
 			return
 		}
 	}
+	gocron.Every(f.every).Second().Do(pkg.PrintMemUsage)
 	<-gocron.Start()
 }
 
 func validate() {
 	if f.filePath == "" {
-		color.Danger.Println("file-path is required")
+		slog.Error("file-path is required")
 		os.Exit(1)
 	}
 }
@@ -87,30 +88,25 @@ func validate() {
 func watch(filePath string) {
 	watcher, err := pkg.NewWatcher(f.dbPath, filePath, f.match, f.ignore, f.noCache)
 	if err != nil {
-		color.Danger.Println(err)
+		slog.Error("Error creating watcher", "error", err.Error(), "filePath", filePath)
 		return
 	}
 	defer watcher.Close()
 
-	color.Secondary.Print("scanning..................... ")
-	fmt.Println(filePath)
+	slog.Info("Scanning file", "filePath", filePath)
 
 	result, err := watcher.Scan()
 	if err != nil {
-		color.Danger.Println(err)
+		slog.Error("Error scanning file", "error", err.Error(), "filePath", filePath)
 		return
 	}
-	color.Secondary.Print("error count.................. ")
-	color.Danger.Println(result.ErrorCount)
+	slog.Info("Error count", "count", result.ErrorCount)
 
 	// first line
-	color.Secondary.Print("1st line..................... ")
-	fmt.Println(pkg.Truncate(result.FirstLine, 50))
+	slog.Info("1st line", "line", pkg.Truncate(result.FirstLine, 50))
 
-	color.Secondary.Print("last line.................... ")
-	fmt.Println(pkg.Truncate(result.LastLine, 50))
-
-	fmt.Println()
+	// last line
+	slog.Info("Last line", "line", pkg.Truncate(result.LastLine, 50))
 
 	if result.ErrorCount < 0 {
 		return
@@ -125,8 +121,7 @@ func notify(errorCount int, firstLine, lastLine string) {
 	if f.msTeamsHook != "" {
 		teamsMsg := fmt.Sprintf("total errors: %d\n\n", errorCount)
 		teamsMsg += fmt.Sprintf("1st error<pre>\n\n%s</pre>\n\nlast error<pre>\n\n%s</pre>", firstLine, lastLine)
-		color.Secondary.Print("Sending to Teams.............")
-		color.Warn.Println("Work in Progress")
+		slog.Info("Sending to Teams")
 
 		hostname, _ := os.Hostname()
 		subject := fmt.Sprintf("match: <code>%s</code>", f.match)
@@ -136,10 +131,11 @@ func notify(errorCount int, firstLine, lastLine string) {
 		subject += fmt.Sprintf("min error: <code>%d</code>", f.min)
 		err := gmt.Send(hostname, f.filePath, subject, "red", teamsMsg, f.msTeamsHook, f.proxy)
 		if err != nil {
-			color.Danger.Println(err)
+			slog.Error("Error sending to Teams", "error", err.Error())
+		} else {
+			slog.Info("Sent to Teams")
+			slog.Info("Done")
 		}
-		color.Secondary.Print("Sent to Teams................ ")
-		color.Success.Println("Done")
 	}
 }
 
@@ -168,7 +164,7 @@ func parseProxy() string {
 }
 func wantsVersion() {
 	if f.version {
-		color.Secondary.Println(version)
+		slog.Info("Version", "version", version)
 		os.Exit(0)
 	}
 }

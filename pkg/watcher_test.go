@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	inMemory = ":memory:"
+	inMemory = "testdb"
 )
 
 func setupTempFile(content string) (string, error) {
