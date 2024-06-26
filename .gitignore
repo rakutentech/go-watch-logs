@@ -23,3 +23,5 @@ tmp/
 *.buntdb
 .DS_Store
 go-watch-logs
+*.sqlite
+*.sqlite3

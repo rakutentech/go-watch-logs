@@ -70,8 +70,6 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
     	on minimum num of matches, it should notify (default 1)
   -ms-teams-hook string
     	ms teams webhook
-  -no-cache
-    	read back from the start of the file (default false)
   -proxy string
     	http proxy for webhooks
   -version

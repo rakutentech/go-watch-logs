@@ -2,28 +2,23 @@ package pkg
 
 import (
 	"bufio"
-	"errors"
-	"fmt"
+	"database/sql"
 	"io"
-	"log/slog"
 	"os"
 	"regexp"
-	"sync"
-
-	"github.com/tidwall/buntdb"
+	"strings"
 )
 
 type Watcher struct {
-	db              *buntdb.DB
+	db              *sql.DB
+	dbName          string // full path
 	filePath        string
 	lastLineKey     string
 	lastFileSizeKey string
 	matchPattern    string
 	ignorePattern   string
-	noCache         bool
 	lastLineNum     int
 	lastFileSize    int64
-	mutex           sync.Mutex
 }
 
 func NewWatcher(
@@ -31,63 +26,27 @@ func NewWatcher(
 	filePath string,
 	matchPattern string,
 	ignorePattern string,
-	noCache bool,
 ) (*Watcher, error) {
-	if dbName == "" {
-		return nil, errors.New("dbName is required")
-	}
-	// add a suffix to the database name, is just in case some, cuz we are doing os remove
-	// and don't want to remove any other file on mis configuration
-	if dbName != ":memory:" {
-		dbName += ".buntdb"
-	}
-	db, err := buntdb.Open(dbName)
+	dbName += ".sqlite"
+	db, err := InitDB(dbName)
 	if err != nil {
-		if err.Error() == "invalid database" {
-			slog.Warn("Invalid database, removing and creating a new one", "dbName", dbName)
-			err = os.Remove(dbName)
-			if err != nil {
-				return nil, err
-			}
-			db, err = buntdb.Open(dbName)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	watcher := &Watcher{
 		db:              db,
+		dbName:          dbName,
 		filePath:        filePath,
 		matchPattern:    matchPattern,
 		ignorePattern:   ignorePattern,
-		noCache:         noCache,
-		lastLineKey:     Hash(filePath + "llk"),
-		lastFileSizeKey: Hash(filePath + "llks"),
+		lastLineKey:     "llk-" + filePath,
+		lastFileSizeKey: "llks-" + filePath,
 	}
-	if watcher.noCache {
-		if err := watcher.NoCache(); err != nil {
-			return nil, err
-		}
-	}
-
 	if err := watcher.loadState(); err != nil {
 		return nil, err
 	}
 
 	return watcher, nil
-}
-func (w *Watcher) NoCache() error {
-	return w.db.Update(func(tx *buntdb.Tx) error {
-		_, _, err := tx.Set(w.lastLineKey, "0", nil)
-		if err != nil {
-			return err
-		}
-		_, _, err = tx.Set(w.lastFileSizeKey, "0", nil)
-		return err
-	})
 }
 
 type ScanResult struct {
@@ -97,8 +56,6 @@ type ScanResult struct {
 }
 
 func (w *Watcher) Scan() (*ScanResult, error) {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
 	errorCounts := 0
 	firstLine := ""
 	lastLine := ""
@@ -111,7 +68,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	currentFileSize := fileInfo.Size()
 
 	// Detect log rotation
-	if currentFileSize < w.lastFileSize {
+	if currentFileSize+2 < w.lastFileSize {
 		w.lastFileSize = 0
 	}
 
@@ -161,6 +118,11 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	w.lastLineNum = currentLineNum
 	w.lastFileSize = bytesRead
 	if err := w.saveState(); err != nil {
+		if strings.HasPrefix(err.Error(), "database is locked") {
+			if err := Vacuum(w.dbName); err != nil {
+				return nil, err
+			}
+		}
 		return nil, err
 	}
 	return &ScanResult{
@@ -171,37 +133,31 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 }
 
 func (w *Watcher) loadState() error {
-	return w.db.View(func(tx *buntdb.Tx) error {
-		lastLineStr, err := tx.Get(w.lastLineKey)
-		if errors.Is(err, buntdb.ErrNotFound) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		fmt.Sscanf(lastLineStr, "%d", &w.lastLineNum) // nolint: errcheck
+	row := w.db.QueryRow(`SELECT value FROM state WHERE key = ?`, w.lastLineKey)
+	var lastLineNum int
+	err := row.Scan(&lastLineNum)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	w.lastLineNum = lastLineNum
 
-		lastFileSizeStr, err := tx.Get(w.lastFileSizeKey)
-		if errors.Is(err, buntdb.ErrNotFound) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		fmt.Sscanf(lastFileSizeStr, "%d", &w.lastFileSize) // nolint: errcheck
-		return nil
-	})
+	row = w.db.QueryRow(`SELECT value FROM state WHERE key = ?`, w.lastFileSizeKey)
+	var lastFileSize int64
+	err = row.Scan(&lastFileSize)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	w.lastFileSize = lastFileSize
+	return nil
 }
 
 func (w *Watcher) saveState() error {
-	return w.db.Update(func(tx *buntdb.Tx) error {
-		_, _, err := tx.Set(w.lastLineKey, fmt.Sprintf("%d", w.lastLineNum), nil)
-		if err != nil {
-			return err
-		}
-		_, _, err = tx.Set(w.lastFileSizeKey, fmt.Sprintf("%d", w.lastFileSize), nil)
+	_, err := w.db.Exec(`REPLACE INTO state (key, value) VALUES (?, ?)`, w.lastLineKey, w.lastLineNum)
+	if err != nil {
 		return err
-	})
+	}
+	_, err = w.db.Exec(`REPLACE INTO state (key, value) VALUES (?, ?)`, w.lastFileSizeKey, w.lastFileSize)
+	return err
 }
 
 func (w *Watcher) Close() error {

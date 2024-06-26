@@ -23,7 +23,6 @@ type Flags struct {
 	proxy       string
 	logLevel    int
 	msTeamsHook string
-	noCache     bool
 	version     bool
 }
 
@@ -44,7 +43,6 @@ func main() {
 		"dbPath", f.dbPath,
 		"min", f.min,
 		"every", f.every,
-		"noCache", f.noCache,
 		"version", f.version,
 		"loglevel", f.logLevel,
 		"proxy", f.proxy,
@@ -102,7 +100,7 @@ func validate() {
 }
 
 func watch(filePath string) {
-	watcher, err := pkg.NewWatcher(f.dbPath, filePath, f.match, f.ignore, f.noCache)
+	watcher, err := pkg.NewWatcher(f.dbPath, filePath, f.match, f.ignore)
 	if err != nil {
 		slog.Error("Error creating watcher", "error", err.Error(), "filePath", filePath)
 		return
@@ -163,7 +161,6 @@ func flags() {
 	flag.Uint64Var(&f.every, "every", 0, "run every n seconds (0 to run once)")
 	flag.IntVar(&f.logLevel, "log-level", 0, "log level (0=info, 1=debug)")
 	flag.IntVar(&f.min, "min", 1, "on minimum num of matches, it should notify")
-	flag.BoolVar(&f.noCache, "no-cache", false, "read back from the start of the file (default false)")
 	flag.BoolVar(&f.version, "version", false, "")
 
 	flag.StringVar(&f.proxy, "proxy", "", "http proxy for webhooks")
