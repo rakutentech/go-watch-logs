@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"regexp"
 	"sync"
 
-	"github.com/gookit/color"
 	"github.com/tidwall/buntdb"
 )
 
@@ -44,7 +44,7 @@ func NewWatcher(
 	db, err := buntdb.Open(dbName)
 	if err != nil {
 		if err.Error() == "invalid database" {
-			color.Danger.Println(err.Error(), "recreating the database")
+			slog.Warn("Invalid database, removing and creating a new one", "dbName", dbName)
 			err = os.Remove(dbName)
 			if err != nil {
 				return nil, err
