@@ -143,7 +143,7 @@ func notify(errorCount int, firstLine, lastLine string) {
 		subject += fmt.Sprintf("ignore: <code>%s</code>", f.ignore)
 		subject += "<br>" // nolint: goconst
 		subject += fmt.Sprintf("min error: <code>%d</code>", f.min)
-		err := gmt.Send(hostname, f.filePath, subject, "red", teamsMsg, f.msTeamsHook, f.proxy)
+		err := gmt.Send(hostname, f.filePath, subject, teamsMsg, f.msTeamsHook, f.proxy)
 		if err != nil {
 			slog.Error("Error sending to Teams", "error", err.Error())
 		} else {
