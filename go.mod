@@ -5,7 +5,7 @@ go 1.22.3
 require (
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/jasonlvhit/gocron v0.0.1
-	github.com/kevincobain2000/go-msteams v0.0.0-20240721093608-adc239132368
+	github.com/kevincobain2000/go-msteams v1.0.0
 	github.com/lmittmann/tint v1.0.5
 	github.com/mattn/go-isatty v0.0.20
 	github.com/stretchr/testify v1.9.0

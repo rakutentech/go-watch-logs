@@ -15,8 +15,8 @@ github.com/google/uuid v1.5.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/jasonlvhit/gocron v0.0.1 h1:qTt5qF3b3srDjeOIR4Le1LfeyvoYzJlYpqvG7tJX5YU=
 github.com/jasonlvhit/gocron v0.0.1/go.mod h1:k9a3TV8VcU73XZxfVHCHWMWF9SOqgoku0/QlY2yvlA4=
-github.com/kevincobain2000/go-msteams v0.0.0-20240721093608-adc239132368 h1:lg68PLkxzGxQnfQ/6ZA6u8a2bVZObt0bDfSzSpQV3h8=
-github.com/kevincobain2000/go-msteams v0.0.0-20240721093608-adc239132368/go.mod h1:+HowoQQHg9HLfx3CYQGImGGYw20+kN9rFmUXgxrqBzo=
+github.com/kevincobain2000/go-msteams v1.0.0 h1:dp8zIs2PfzsFV1LFFSNFzy1tpEIYJ+X1Hx/W2oC0CAY=
+github.com/kevincobain2000/go-msteams v1.0.0/go.mod h1:+HowoQQHg9HLfx3CYQGImGGYw20+kN9rFmUXgxrqBzo=
 github.com/lmittmann/tint v1.0.5 h1:NQclAutOfYsqs2F1Lenue6OoWCajs5wJcP3DfWVpePw=
 github.com/lmittmann/tint v1.0.5/go.mod h1:HIS3gSy7qNwGCj+5oRjAutErFBl4BzdQP6cJZ0NfMwE=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
