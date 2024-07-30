@@ -134,15 +134,16 @@ func watch(filePath string) {
 func notify(errorCount int, firstLine, lastLine string) {
 	if f.msTeamsHook != "" {
 		teamsMsg := fmt.Sprintf("total errors: %d\n\n", errorCount)
-		teamsMsg += fmt.Sprintf("1st error<pre>\n\n%s</pre>\n\nlast error<pre>\n\n%s</pre>", firstLine, lastLine)
+		teamsMsg += fmt.Sprintf("first line: %s\n\n", firstLine)
+		teamsMsg += fmt.Sprintf("last line: %s\n\n", lastLine)
 		slog.Info("Sending to Teams")
 
 		hostname, _ := os.Hostname()
-		subject := fmt.Sprintf("match: <code>%s</code>", f.match)
+		subject := fmt.Sprintf("match: %s", f.match)
 		subject += "<br>" // nolint: goconst
-		subject += fmt.Sprintf("ignore: <code>%s</code>", f.ignore)
+		subject += fmt.Sprintf("ignore: %s", f.ignore)
 		subject += "<br>" // nolint: goconst
-		subject += fmt.Sprintf("min error: <code>%d</code>", f.min)
+		subject += fmt.Sprintf("min error: %d", f.min)
 		err := gmt.Send(hostname, f.filePath, subject, teamsMsg, f.msTeamsHook, f.proxy)
 		if err != nil {
 			slog.Error("Error sending to Teams", "error", err.Error())
