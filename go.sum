@@ -19,6 +19,8 @@ github.com/kevincobain2000/go-msteams v1.0.0 h1:dp8zIs2PfzsFV1LFFSNFzy1tpEIYJ+X1
 github.com/kevincobain2000/go-msteams v1.0.0/go.mod h1:+HowoQQHg9HLfx3CYQGImGGYw20+kN9rFmUXgxrqBzo=
 github.com/kevincobain2000/go-msteams v1.0.1 h1:EXwMHSrmvV3k6WKL3MotAqkBWta85bq56NBTQi/wbag=
 github.com/kevincobain2000/go-msteams v1.0.1/go.mod h1:+HowoQQHg9HLfx3CYQGImGGYw20+kN9rFmUXgxrqBzo=
+github.com/kevincobain2000/go-msteams v1.1.0 h1:r2Q/Ug2ZGQclDHzIfppyfB4FPjAcDjNIti3WmI91VTo=
+github.com/kevincobain2000/go-msteams v1.1.0/go.mod h1:+HowoQQHg9HLfx3CYQGImGGYw20+kN9rFmUXgxrqBzo=
 github.com/lmittmann/tint v1.0.5 h1:NQclAutOfYsqs2F1Lenue6OoWCajs5wJcP3DfWVpePw=
 github.com/lmittmann/tint v1.0.5/go.mod h1:HIS3gSy7qNwGCj+5oRjAutErFBl4BzdQP6cJZ0NfMwE=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=

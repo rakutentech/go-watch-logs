@@ -132,25 +132,27 @@ func watch(filePath string) {
 }
 
 func notify(errorCount int, firstLine, lastLine string) {
-	if f.msTeamsHook != "" {
-		teamsMsg := fmt.Sprintf("total errors: %d\n\n", errorCount)
-		teamsMsg += fmt.Sprintf("first line: %s\n\n", firstLine)
-		teamsMsg += fmt.Sprintf("last line: %s\n\n", lastLine)
-		slog.Info("Sending to Teams")
+	if f.msTeamsHook == "" {
+		return
+	}
 
-		hostname, _ := os.Hostname()
-		subject := fmt.Sprintf("match: %s", f.match)
-		subject += "," // nolint: goconst
-		subject += fmt.Sprintf("ignore: %s", f.ignore)
-		subject += "," // nolint: goconst
-		subject += fmt.Sprintf("min error: %d", f.min)
-		err := gmt.Send(hostname, f.filePath, subject, teamsMsg, f.msTeamsHook, f.proxy)
-		if err != nil {
-			slog.Error("Error sending to Teams", "error", err.Error())
-		} else {
-			slog.Info("Sent to Teams")
-			slog.Info("Done")
-		}
+	slog.Info("Sending to MS Teams")
+	details := map[string]string{
+		"Match Pattern":        f.match,
+		"Ignore Pattern":       f.ignore,
+		"Min Errors Threshold": fmt.Sprintf("%d", f.min),
+		"Total Errors Found":   fmt.Sprintf("%d", errorCount),
+		"First Line":           firstLine,
+		"Last Line":            lastLine,
+	}
+
+	hostname, _ := os.Hostname()
+
+	err := gmt.Send(hostname, details, f.msTeamsHook, f.proxy)
+	if err != nil {
+		slog.Error("Error sending to Teams", "error", err.Error())
+	} else {
+		slog.Info("Succesfully sent to MS Teams")
 	}
 }
 
