@@ -137,13 +137,31 @@ func notify(errorCount int, firstLine, lastLine string) {
 	}
 
 	slog.Info("Sending to MS Teams")
-	details := map[string]string{
-		"Match Pattern":        f.match,
-		"Ignore Pattern":       f.ignore,
-		"Min Errors Threshold": fmt.Sprintf("%d", f.min),
-		"Total Errors Found":   fmt.Sprintf("%d", errorCount),
-		"First Line":           firstLine,
-		"Last Line":            lastLine,
+	details := []gmt.Details{
+		{
+			Label:   "Match Pattern",
+			Message: f.match,
+		},
+		{
+			Label:   "Ignore Pattern",
+			Message: f.ignore,
+		},
+		{
+			Label:   "Min Errors Threshold",
+			Message: fmt.Sprintf("%d", f.min),
+		},
+		{
+			Label:   "Total Errors Found",
+			Message: fmt.Sprintf("%d", errorCount),
+		},
+		{
+			Label:   "First Line",
+			Message: firstLine,
+		},
+		{
+			Label:   "Last Line",
+			Message: lastLine,
+		},
 	}
 
 	hostname, _ := os.Hostname()
