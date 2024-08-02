@@ -104,7 +104,9 @@ func cron() {
 		watch(filePath)
 	}
 	if f.post != "" {
-		pkg.ExecShell(f.post)
+		if _, err := pkg.ExecShell(f.post); err != nil {
+			slog.Error("Error running post command", "error", err.Error())
+		}
 	}
 }
 
