@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/jasonlvhit/gocron"
 	gmt "github.com/kevincobain2000/go-msteams/src"
@@ -30,6 +32,9 @@ var f Flags
 
 var version = "dev"
 
+var filePaths []string
+var filePathsMutex sync.Mutex
+
 func main() {
 	flags()
 	pkg.SetupLoggingStdout(f.logLevel)
@@ -49,7 +54,8 @@ func main() {
 		"msTeamsHook", f.msTeamsHook,
 	)
 
-	filePaths, err := pkg.FilesByPattern(f.filePath)
+	var err error
+	filePaths, err = pkg.FilesByPattern(f.filePath)
 	if err != nil {
 		slog.Error("Error finding files", "error", err.Error())
 		return
@@ -74,22 +80,48 @@ func main() {
 		watch(filePath)
 	}
 	if f.every > 0 {
-		cron(filePaths)
+		if err := gocron.Every(f.every).Second().Do(pkg.PrintMemUsage); err != nil {
+			slog.Error("Error scheduling memory usage", "error", err.Error())
+			return
+		}
+		if err := gocron.Every(f.every).Second().Do(cron); err != nil {
+			slog.Error("Error scheduling cron", "error", err.Error())
+			return
+		}
+		if err := gocron.Every(f.every).Second().Do(syncFilePaths); err != nil {
+			slog.Error("Error scheduling syncFilePaths", "error", err.Error())
+			return
+		}
+		<-gocron.Start()
 	}
 }
 
-func cron(filePaths []string) {
+func cron() {
+	filePathsMutex.Lock()
+	defer filePathsMutex.Unlock()
+
 	for _, filePath := range filePaths {
-		if err := gocron.Every(f.every).Second().Do(watch, filePath); err != nil {
-			slog.Error("Error scheduling watch", "error", err.Error(), "filePath", filePath)
-			return
-		}
+		watch(filePath)
+		slog.Debug("Sleeping for 0.5 seconds")
+		time.Sleep(500 * time.Millisecond)
 	}
-	if err := gocron.Every(f.every).Second().Do(pkg.PrintMemUsage); err != nil {
-		slog.Error("Error scheduling memory usage", "error", err.Error())
+}
+
+func syncFilePaths() {
+	var err error
+	newFilePaths, err := pkg.FilesByPattern(f.filePath)
+	if err != nil {
+		slog.Error("Error finding files", "error", err.Error())
 		return
 	}
-	<-gocron.Start()
+	if len(newFilePaths) == 0 {
+		slog.Error("No files found", "filePath", f.filePath)
+		return
+	}
+
+	filePathsMutex.Lock()
+	filePaths = newFilePaths
+	filePathsMutex.Unlock()
 }
 
 func validate() {
@@ -176,7 +208,7 @@ func notify(result *pkg.ScanResult) {
 	if err != nil {
 		slog.Error("Error sending to Teams", "error", err.Error())
 	} else {
-		slog.Info("Succesfully sent to MS Teams")
+		slog.Info("Successfully sent to MS Teams")
 	}
 }
 
@@ -203,6 +235,7 @@ func parseProxy() string {
 	}
 	return f.proxy
 }
+
 func wantsVersion() {
 	if f.version {
 		slog.Info("Version", "version", version)
