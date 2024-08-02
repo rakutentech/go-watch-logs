@@ -50,6 +50,7 @@ func NewWatcher(
 }
 
 type ScanResult struct {
+	FilePath   string
 	ErrorCount int
 	FirstLine  string
 	LastLine   string
@@ -129,6 +130,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		ErrorCount: errorCounts,
 		FirstLine:  firstLine,
 		LastLine:   lastLine,
+		FilePath:   w.filePath,
 	}, nil
 }
 

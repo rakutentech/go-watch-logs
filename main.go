@@ -122,22 +122,28 @@ func watch(filePath string) {
 	// last line
 	slog.Info("Last line", "line", pkg.Truncate(result.LastLine, 50))
 
+	slog.Info("Scanning complete", "filePath", result.FilePath)
+
 	if result.ErrorCount < 0 {
 		return
 	}
 	if result.ErrorCount < f.min {
 		return
 	}
-	notify(result.ErrorCount, result.FirstLine, result.LastLine)
+	notify(result)
 }
 
-func notify(errorCount int, firstLine, lastLine string) {
+func notify(result *pkg.ScanResult) {
 	if f.msTeamsHook == "" {
 		return
 	}
 
 	slog.Info("Sending to MS Teams")
 	details := []gmt.Details{
+		{
+			Label:   "File Path",
+			Message: result.FilePath,
+		},
 		{
 			Label:   "Match Pattern",
 			Message: f.match,
@@ -152,15 +158,15 @@ func notify(errorCount int, firstLine, lastLine string) {
 		},
 		{
 			Label:   "Total Errors Found",
-			Message: fmt.Sprintf("%d", errorCount),
+			Message: fmt.Sprintf("%d", result.ErrorCount),
 		},
 		{
 			Label:   "First Line",
-			Message: firstLine,
+			Message: result.FirstLine,
 		},
 		{
 			Label:   "Last Line",
-			Message: lastLine,
+			Message: result.LastLine,
 		},
 	}
 
