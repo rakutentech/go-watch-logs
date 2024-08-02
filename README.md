@@ -64,12 +64,16 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
     	full path to the log file
   -ignore string
     	regex for ignoring errors (empty to ignore none)
+  -log-level int
+    	log level (0=info, 1=debug)
   -match string
     	regex for matching errors (empty to match all lines)
   -min int
     	on minimum num of matches, it should notify (default 1)
   -ms-teams-hook string
     	ms teams webhook
+  -post string
+    	run this shell command after every scan
   -proxy string
     	http proxy for webhooks
   -version

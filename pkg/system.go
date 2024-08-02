@@ -3,6 +3,7 @@ package pkg
 import (
 	"log/slog"
 	"os"
+	"os/exec"
 	"runtime"
 )
 
@@ -28,4 +29,10 @@ func PrintMemUsage() {
 
 func bToMb(b uint64) uint64 {
 	return b / 1024 / 1024
+}
+
+func ExecShell(command string) (string, error) {
+	cmd := exec.Command("sh", "-c", command)
+	out, err := cmd.CombinedOutput()
+	return string(out), err
 }
