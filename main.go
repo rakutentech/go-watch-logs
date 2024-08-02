@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/jasonlvhit/gocron"
 	gmt "github.com/kevincobain2000/go-msteams/src"
@@ -19,6 +18,7 @@ type Flags struct {
 	match    string
 	ignore   string
 	dbPath   string
+	post     string
 
 	min         int
 	every       uint64
@@ -102,8 +102,9 @@ func cron() {
 
 	for _, filePath := range filePaths {
 		watch(filePath)
-		slog.Debug("Sleeping for 0.5 seconds")
-		time.Sleep(500 * time.Millisecond)
+	}
+	if f.post != "" {
+		pkg.ExecShell(f.post)
 	}
 }
 
@@ -217,6 +218,7 @@ func flags() {
 	flag.StringVar(&f.dbPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file")
 	flag.StringVar(&f.match, "match", "", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
+	flag.StringVar(&f.post, "post", "", "run this shell command after every scan")
 	flag.Uint64Var(&f.every, "every", 0, "run every n seconds (0 to run once)")
 	flag.IntVar(&f.logLevel, "log-level", 0, "log level (0=info, 1=debug)")
 	flag.IntVar(&f.min, "min", 1, "on minimum num of matches, it should notify")
