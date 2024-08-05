@@ -14,11 +14,12 @@ import (
 )
 
 type Flags struct {
-	filePath string
-	match    string
-	ignore   string
-	dbPath   string
-	post     string
+	filePath     string
+	filePathsCap int
+	match        string
+	ignore       string
+	dbPath       string
+	post         string
 
 	min         int
 	every       uint64
@@ -55,15 +56,22 @@ func main() {
 	)
 
 	var err error
-	filePaths, err = pkg.FilesByPattern(f.filePath)
+	newFilePaths, err := pkg.FilesByPattern(f.filePath)
 	if err != nil {
 		slog.Error("Error finding files", "error", err.Error())
 		return
 	}
-	if len(filePaths) == 0 {
+	if len(newFilePaths) == 0 {
 		slog.Error("No files found", "filePath", f.filePath)
 		return
 	}
+	if len(newFilePaths) > f.filePathsCap {
+		slog.Error("Too many files found", "count", len(newFilePaths), "cap", f.filePathsCap)
+		slog.Info("Capping to", "count", f.filePathsCap)
+	}
+
+	filePaths = newFilePaths[:f.filePathsCap]
+
 	for _, filePath := range filePaths {
 		isText, err := pkg.IsTextFile(filePath)
 		if err != nil {
@@ -123,7 +131,7 @@ func syncFilePaths() {
 	}
 
 	filePathsMutex.Lock()
-	filePaths = newFilePaths
+	filePaths = newFilePaths[:f.filePathsCap]
 	filePathsMutex.Unlock()
 }
 
@@ -223,6 +231,7 @@ func flags() {
 	flag.StringVar(&f.post, "post", "", "run this shell command after every scan")
 	flag.Uint64Var(&f.every, "every", 0, "run every n seconds (0 to run once)")
 	flag.IntVar(&f.logLevel, "log-level", 0, "log level (0=info, 1=debug)")
+	flag.IntVar(&f.filePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.IntVar(&f.min, "min", 1, "on minimum num of matches, it should notify")
 	flag.BoolVar(&f.version, "version", false, "")
 
