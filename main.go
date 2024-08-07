@@ -55,7 +55,7 @@ func main() {
 		return
 	}
 	if len(newFilePaths) > f.filePathsCap {
-		slog.Error("Too many files found", "count", len(newFilePaths), "cap", f.filePathsCap)
+		slog.Warn("Too many files found", "count", len(newFilePaths), "cap", f.filePathsCap)
 		slog.Info("Capping to", "count", f.filePathsCap)
 	}
 
@@ -148,7 +148,11 @@ func sendHealthCheck() {
 	details := []gmt.Details{
 		{
 			Label:   "Health Check",
-			Message: "All OK, watching logs is running actively next ping in " + fmt.Sprintf("%d", f.healthCheckEvery) + " seconds",
+			Message: "All OK, go-watch-logs is running actively.",
+		},
+		{
+			Label:   "Next Ping",
+			Message: fmt.Sprintf("%d seconds", f.healthCheckEvery),
 		},
 		{
 			Label:   "Version",
