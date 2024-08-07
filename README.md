@@ -94,6 +94,4 @@ BenchmarkLogRotation-10               	    9712	    143824 ns/op	    9707 B/op	 
 ## CHANGE LOG
 
 - v1.0.0: Initial release
-- v2.0.0: Fixed log rotation issue and tail issues
-- v2.0.11: Fixed invalid db issue on race, and use bytes instead of strings
 
