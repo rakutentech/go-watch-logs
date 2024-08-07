@@ -59,12 +59,12 @@ func main() {
 		slog.Info("Capping to", "count", f.filePathsCap)
 	}
 
-	cap := f.filePathsCap
-	if cap > len(newFilePaths) {
-		cap = len(newFilePaths)
+	capped := f.filePathsCap
+	if capped > len(newFilePaths) {
+		capped = len(newFilePaths)
 	}
 
-	filePaths = newFilePaths[:cap]
+	filePaths = newFilePaths[:capped]
 
 	for _, filePath := range filePaths {
 		isText, err := pkg.IsTextFile(filePath)
@@ -131,12 +131,12 @@ func syncFilePaths() {
 	}
 
 	filePathsMutex.Lock()
-	cap := f.filePathsCap
-	if cap > len(newFilePaths) {
-		cap = len(newFilePaths)
+	capped := f.filePathsCap
+	if capped > len(newFilePaths) {
+		capped = len(newFilePaths)
 	}
 
-	filePaths = newFilePaths[:cap]
+	filePaths = newFilePaths[:capped]
 
 	filePathsMutex.Unlock()
 }
