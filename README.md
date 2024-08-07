@@ -57,11 +57,15 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
 
 ```sh
   -db-path string
-    	path to store db file (default ".go-watch-logs.db")
+    	path to store db file (default "/Users/pulkit.kathuria/.go-watch-logs.db")
   -every uint
     	run every n seconds (0 to run once)
   -file-path string
     	full path to the log file
+  -file-paths-cap int
+    	max number of file paths to watch (default 100)
+  -health-check-every uint
+    	run health check every n seconds (0 to disable) (default 86400)
   -ignore string
     	regex for ignoring errors (empty to ignore none)
   -log-level int
@@ -94,4 +98,5 @@ BenchmarkLogRotation-10               	    9712	    143824 ns/op	    9707 B/op	 
 ## CHANGE LOG
 
 - v1.0.0: Initial release
+- v1.0.1: Health Check
 
