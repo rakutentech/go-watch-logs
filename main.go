@@ -21,12 +21,13 @@ type Flags struct {
 	dbPath       string
 	post         string
 
-	min         int
-	every       uint64
-	proxy       string
-	logLevel    int
-	msTeamsHook string
-	version     bool
+	min              int
+	every            uint64
+	healthCheckEvery uint64
+	proxy            string
+	logLevel         int
+	msTeamsHook      string
+	version          bool
 }
 
 var f Flags
@@ -42,18 +43,6 @@ func main() {
 	parseProxy()
 	wantsVersion()
 	validate()
-	slog.Info("Flags",
-		"filePath", f.filePath,
-		"match", f.match,
-		"ignore", f.ignore,
-		"dbPath", f.dbPath,
-		"min", f.min,
-		"every", f.every,
-		"version", f.version,
-		"loglevel", f.logLevel,
-		"proxy", f.proxy,
-		"msTeamsHook", f.msTeamsHook,
-	)
 
 	var err error
 	newFilePaths, err := pkg.FilesByPattern(f.filePath)
@@ -70,7 +59,12 @@ func main() {
 		slog.Info("Capping to", "count", f.filePathsCap)
 	}
 
-	filePaths = newFilePaths[:f.filePathsCap]
+	cap := f.filePathsCap
+	if cap > len(newFilePaths) {
+		cap = len(newFilePaths)
+	}
+
+	filePaths = newFilePaths[:cap]
 
 	for _, filePath := range filePaths {
 		isText, err := pkg.IsTextFile(filePath)
@@ -99,6 +93,12 @@ func main() {
 		if err := gocron.Every(f.every).Second().Do(syncFilePaths); err != nil {
 			slog.Error("Error scheduling syncFilePaths", "error", err.Error())
 			return
+		}
+		if f.healthCheckEvery > 0 {
+			if err := gocron.Every(f.healthCheckEvery).Second().Do(sendHealthCheck); err != nil {
+				slog.Error("Error scheduling health check", "error", err.Error())
+				return
+			}
 		}
 		<-gocron.Start()
 	}
@@ -131,8 +131,69 @@ func syncFilePaths() {
 	}
 
 	filePathsMutex.Lock()
-	filePaths = newFilePaths[:f.filePathsCap]
+	cap := f.filePathsCap
+	if cap > len(newFilePaths) {
+		cap = len(newFilePaths)
+	}
+
+	filePaths = newFilePaths[:cap]
+
 	filePathsMutex.Unlock()
+}
+
+func sendHealthCheck() {
+	if f.msTeamsHook == "" {
+		return
+	}
+	details := []gmt.Details{
+		{
+			Label:   "Health Check",
+			Message: "All OK, watching logs is running actively next ping in " + fmt.Sprintf("%d", f.healthCheckEvery) + " seconds",
+		},
+		{
+			Label:   "Version",
+			Message: version,
+		},
+		{
+			Label:   "File Path Pattern",
+			Message: f.filePath,
+		},
+		{
+			Label:   "File Path Cap",
+			Message: fmt.Sprintf("%d", f.filePathsCap),
+		},
+		{
+			Label:   "Match Pattern",
+			Message: f.match,
+		},
+		{
+			Label:   "Ignore Pattern",
+			Message: f.ignore,
+		},
+		{
+			Label:   "Min Errors Threshold",
+			Message: fmt.Sprintf("%d", f.min),
+		},
+		{
+			Label:   "Monitoring Every",
+			Message: fmt.Sprintf("%d", f.every),
+		},
+	}
+	for idx, filePath := range filePaths {
+		details = append(details, gmt.Details{
+			Label:   fmt.Sprintf("File Path %d", idx+1),
+			Message: filePath,
+		})
+	}
+
+	hostname, _ := os.Hostname()
+
+	err := gmt.Send(hostname, details, f.msTeamsHook, f.proxy)
+	if err != nil {
+		slog.Error("Error sending to Teams", "error", err.Error())
+	} else {
+		slog.Info("Successfully sent to MS Teams")
+	}
 }
 
 func validate() {
@@ -230,6 +291,7 @@ func flags() {
 	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
 	flag.StringVar(&f.post, "post", "", "run this shell command after every scan")
 	flag.Uint64Var(&f.every, "every", 0, "run every n seconds (0 to run once)")
+	flag.Uint64Var(&f.healthCheckEvery, "health-check-every", 86400, "run health check every n seconds (0 to disable)")
 	flag.IntVar(&f.logLevel, "log-level", 0, "log level (0=info, 1=debug)")
 	flag.IntVar(&f.filePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.IntVar(&f.min, "min", 1, "on minimum num of matches, it should notify")
