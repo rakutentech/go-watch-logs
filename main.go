@@ -19,7 +19,8 @@ type Flags struct {
 	match        string
 	ignore       string
 	dbPath       string
-	post         string
+	postAlways   string
+	postMin      string
 
 	min              int
 	every            uint64
@@ -111,8 +112,8 @@ func cron() {
 	for _, filePath := range filePaths {
 		watch(filePath)
 	}
-	if f.post != "" {
-		if _, err := pkg.ExecShell(f.post); err != nil {
+	if f.postAlways != "" {
+		if _, err := pkg.ExecShell(f.postAlways); err != nil {
 			slog.Error("Error running post command", "error", err.Error())
 		}
 	}
@@ -239,6 +240,11 @@ func watch(filePath string) {
 		return
 	}
 	notify(result)
+	if f.postMin != "" {
+		if _, err := pkg.ExecShell(f.postMin); err != nil {
+			slog.Error("Error running post command", "error", err.Error())
+		}
+	}
 }
 
 func notify(result *pkg.ScanResult) {
@@ -293,7 +299,8 @@ func flags() {
 	flag.StringVar(&f.dbPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file")
 	flag.StringVar(&f.match, "match", "", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
-	flag.StringVar(&f.post, "post", "", "run this shell command after every scan")
+	flag.StringVar(&f.postAlways, "post-always", "", "run this shell command after every scan")
+	flag.StringVar(&f.postMin, "post-min", "", "run this shell command after every scan when min errors are found")
 	flag.Uint64Var(&f.every, "every", 0, "run every n seconds (0 to run once)")
 	flag.Uint64Var(&f.healthCheckEvery, "health-check-every", 86400, "run health check every n seconds (0 to disable)")
 	flag.IntVar(&f.logLevel, "log-level", 0, "log level (0=info, 1=debug)")
