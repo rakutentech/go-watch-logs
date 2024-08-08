@@ -53,8 +53,10 @@ type ScanResult struct {
 	FilePath    string
 	ErrorCount  int
 	FirstLine   string
+	FirstDate   string
 	PreviewLine string
 	LastLine    string
+	LastDate    string
 }
 
 func (w *Watcher) Scan() (*ScanResult, error) {
@@ -135,8 +137,10 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	return &ScanResult{
 		ErrorCount:  errorCounts,
 		FirstLine:   firstLine,
+		FirstDate:   SearchDate(firstLine),
 		PreviewLine: previewLine,
 		LastLine:    lastLine,
+		LastDate:    SearchDate(lastLine),
 		FilePath:    w.filePath,
 	}, nil
 }

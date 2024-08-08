@@ -48,7 +48,7 @@ func GetHealthCheckDetails(f *Flags, version string) []gmt.Details {
 }
 
 func GetAlertDetails(f *Flags, result *ScanResult) []gmt.Details {
-	return []gmt.Details{
+	details := []gmt.Details{
 		{
 			Label:   "File Path",
 			Message: result.FilePath,
@@ -71,7 +71,7 @@ func GetAlertDetails(f *Flags, result *ScanResult) []gmt.Details {
 		},
 		{
 			Label:   "First Line",
-			Message: result.FirstLine,
+			Message: Truncate(result.FirstLine, TRUNCATE_MAX),
 		},
 		{
 			Label:   "Mid Lines",
@@ -79,7 +79,14 @@ func GetAlertDetails(f *Flags, result *ScanResult) []gmt.Details {
 		},
 		{
 			Label:   "Last Line",
-			Message: result.LastLine,
+			Message: Truncate(result.LastLine, TRUNCATE_MAX),
 		},
 	}
+	if result.FirstDate != "" || result.LastDate != "" {
+		details = append(details, gmt.Details{
+			Label:   "From - To",
+			Message: fmt.Sprintf("%s - %s", result.FirstDate, result.LastDate),
+		})
+	}
+	return details
 }
