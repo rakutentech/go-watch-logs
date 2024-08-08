@@ -37,5 +37,5 @@ func SearchDate(input string) string {
 	if !ok {
 		return ""
 	}
-	return ts.String()
+	return ts.Format("2006-01-02 15:04:05")
 }
