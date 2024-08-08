@@ -160,11 +160,9 @@ func watch(filePath string) {
 	}
 	slog.Info("Error count", "count", result.ErrorCount)
 
-	// first line
-	slog.Info("1st line", "line", pkg.Truncate(result.FirstLine, 50))
-
-	// last line
-	slog.Info("Last line", "line", pkg.Truncate(result.LastLine, 50))
+	slog.Info("1st line", "line", pkg.Truncate(result.FirstLine, 150))
+	slog.Info("Preview line", "line", pkg.Truncate(result.PreviewLine, 150))
+	slog.Info("Last line", "line", pkg.Truncate(result.LastLine, 150))
 
 	slog.Info("Scanning complete", "filePath", result.FilePath)
 

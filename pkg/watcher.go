@@ -50,16 +50,18 @@ func NewWatcher(
 }
 
 type ScanResult struct {
-	FilePath   string
-	ErrorCount int
-	FirstLine  string
-	LastLine   string
+	FilePath    string
+	ErrorCount  int
+	FirstLine   string
+	PreviewLine string
+	LastLine    string
 }
 
 func (w *Watcher) Scan() (*ScanResult, error) {
 	errorCounts := 0
 	firstLine := ""
 	lastLine := ""
+	previewLine := ""
 
 	fileInfo, err := os.Stat(w.filePath)
 	if err != nil {
@@ -104,10 +106,14 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 			continue
 		}
 		if re.Match(line) {
+			lineStr := string(line)
 			if firstLine == "" {
-				firstLine = string(line)
+				firstLine = lineStr
 			}
-			lastLine = string(line)
+			if len(previewLine) < 1000 && firstLine != lineStr {
+				previewLine += lineStr
+			}
+			lastLine = lineStr
 			errorCounts++
 		}
 	}
@@ -127,10 +133,11 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		return nil, err
 	}
 	return &ScanResult{
-		ErrorCount: errorCounts,
-		FirstLine:  firstLine,
-		LastLine:   lastLine,
-		FilePath:   w.filePath,
+		ErrorCount:  errorCounts,
+		FirstLine:   firstLine,
+		PreviewLine: previewLine,
+		LastLine:    lastLine,
+		FilePath:    w.filePath,
 	}, nil
 }
 

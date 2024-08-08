@@ -74,6 +74,10 @@ func GetAlertDetails(f *Flags, result *ScanResult) []gmt.Details {
 			Message: result.FirstLine,
 		},
 		{
+			Label:   "Mid Lines",
+			Message: result.PreviewLine,
+		},
+		{
 			Label:   "Last Line",
 			Message: result.LastLine,
 		},
