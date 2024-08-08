@@ -112,7 +112,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 			if firstLine == "" {
 				firstLine = lineStr
 			}
-			if len(previewLine) < 1000 && firstLine != lineStr {
+			if len(previewLine) < 1000 {
 				previewLine += lineStr
 			}
 			lastLine = lineStr
