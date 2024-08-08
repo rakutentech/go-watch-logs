@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"crypto/sha256"
+	"sync"
 
 	"github.com/gravwell/gravwell/v3/timegrinder"
 )
@@ -24,17 +25,25 @@ func Truncate(s string, n int) string {
 	return s[:n] + "..."
 }
 
-func SearchDate(input string) string {
+var (
+	tg   *timegrinder.TimeGrinder
+	once sync.Once
+)
+
+func initTimeGrinder() {
 	cfg := timegrinder.Config{}
-	tg, err := timegrinder.NewTimeGrinder(cfg)
+	var err error
+	tg, err = timegrinder.NewTimeGrinder(cfg)
 	if err != nil {
-		return ""
+		panic(err)
 	}
+}
+
+func SearchDate(input string) string {
+	once.Do(initTimeGrinder)
+
 	ts, ok, err := tg.Extract([]byte(input))
-	if err != nil {
-		return ""
-	}
-	if !ok {
+	if err != nil || !ok {
 		return ""
 	}
 	return ts.Format("2006-01-02 15:04:05")
