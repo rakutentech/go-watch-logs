@@ -101,4 +101,5 @@ BenchmarkLogRotation-10               	    1036	   1175464 ns/op	   12930 B/op	 
 
 - v1.0.0: Initial release
 - v1.0.1: Health Check
+- v1.0.2: `--post`, `--post-min`, `--health-check-every` and preview added
 
