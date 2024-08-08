@@ -13,25 +13,7 @@ import (
 	"github.com/rakutentech/go-watch-logs/pkg"
 )
 
-type Flags struct {
-	filePath     string
-	filePathsCap int
-	match        string
-	ignore       string
-	dbPath       string
-	postAlways   string
-	postMin      string
-
-	min              int
-	every            uint64
-	healthCheckEvery uint64
-	proxy            string
-	logLevel         int
-	msTeamsHook      string
-	version          bool
-}
-
-var f Flags
+var f pkg.Flags
 
 var version = "dev"
 
@@ -40,32 +22,27 @@ var filePathsMutex sync.Mutex
 
 func main() {
 	flags()
-	pkg.SetupLoggingStdout(f.logLevel)
+	pkg.SetupLoggingStdout(f.LogLevel)
 	parseProxy()
 	wantsVersion()
 	validate()
 
 	var err error
-	newFilePaths, err := pkg.FilesByPattern(f.filePath)
+	newFilePaths, err := pkg.FilesByPattern(f.FilePath)
 	if err != nil {
 		slog.Error("Error finding files", "error", err.Error())
 		return
 	}
 	if len(newFilePaths) == 0 {
-		slog.Error("No files found", "filePath", f.filePath)
+		slog.Error("No files found", "filePath", f.FilePath)
 		return
 	}
-	if len(newFilePaths) > f.filePathsCap {
-		slog.Warn("Too many files found", "count", len(newFilePaths), "cap", f.filePathsCap)
-		slog.Info("Capping to", "count", f.filePathsCap)
+	if len(newFilePaths) > f.FilePathsCap {
+		slog.Warn("Too many files found", "count", len(newFilePaths), "cap", f.FilePathsCap)
+		slog.Info("Capping to", "count", f.FilePathsCap)
 	}
 
-	capped := f.filePathsCap
-	if capped > len(newFilePaths) {
-		capped = len(newFilePaths)
-	}
-
-	filePaths = newFilePaths[:capped]
+	filePaths = pkg.Capped(f.FilePathsCap, newFilePaths)
 
 	for _, filePath := range filePaths {
 		isText, err := pkg.IsTextFile(filePath)
@@ -82,21 +59,21 @@ func main() {
 	for _, filePath := range filePaths {
 		watch(filePath)
 	}
-	if f.every > 0 {
-		if err := gocron.Every(f.every).Second().Do(pkg.PrintMemUsage); err != nil {
+	if f.Every > 0 {
+		if err := gocron.Every(f.Every).Second().Do(pkg.PrintMemUsage); err != nil {
 			slog.Error("Error scheduling memory usage", "error", err.Error())
 			return
 		}
-		if err := gocron.Every(f.every).Second().Do(cron); err != nil {
+		if err := gocron.Every(f.Every).Second().Do(cron); err != nil {
 			slog.Error("Error scheduling cron", "error", err.Error())
 			return
 		}
-		if err := gocron.Every(f.every).Second().Do(syncFilePaths); err != nil {
+		if err := gocron.Every(f.Every).Second().Do(syncFilePaths); err != nil {
 			slog.Error("Error scheduling syncFilePaths", "error", err.Error())
 			return
 		}
-		if f.healthCheckEvery > 0 {
-			if err := gocron.Every(f.healthCheckEvery).Second().Do(sendHealthCheck); err != nil {
+		if f.HealthCheckEvery > 0 {
+			if err := gocron.Every(f.HealthCheckEvery).Second().Do(sendHealthCheck); err != nil {
 				slog.Error("Error scheduling health check", "error", err.Error())
 				return
 			}
@@ -112,8 +89,8 @@ func cron() {
 	for _, filePath := range filePaths {
 		watch(filePath)
 	}
-	if f.postAlways != "" {
-		if _, err := pkg.ExecShell(f.postAlways); err != nil {
+	if f.PostAlways != "" {
+		if _, err := pkg.ExecShell(f.PostAlways); err != nil {
 			slog.Error("Error running post command", "error", err.Error())
 		}
 	}
@@ -121,69 +98,27 @@ func cron() {
 
 func syncFilePaths() {
 	var err error
-	newFilePaths, err := pkg.FilesByPattern(f.filePath)
+	newFilePaths, err := pkg.FilesByPattern(f.FilePath)
 	if err != nil {
 		slog.Error("Error finding files", "error", err.Error())
 		return
 	}
 	if len(newFilePaths) == 0 {
-		slog.Error("No files found", "filePath", f.filePath)
+		slog.Error("No files found", "filePath", f.FilePath)
 		return
 	}
 
 	filePathsMutex.Lock()
-	capped := f.filePathsCap
-	if capped > len(newFilePaths) {
-		capped = len(newFilePaths)
-	}
-
-	filePaths = newFilePaths[:capped]
+	filePaths = pkg.Capped(f.FilePathsCap, newFilePaths)
 
 	filePathsMutex.Unlock()
 }
 
 func sendHealthCheck() {
-	if f.msTeamsHook == "" {
+	if f.MSTeamsHook == "" {
 		return
 	}
-	details := []gmt.Details{
-		{
-			Label:   "Health Check",
-			Message: "All OK, go-watch-logs is running actively.",
-		},
-		{
-			Label:   "Next Ping",
-			Message: fmt.Sprintf("%d seconds", f.healthCheckEvery),
-		},
-		{
-			Label:   "Version",
-			Message: version,
-		},
-		{
-			Label:   "File Path Pattern",
-			Message: f.filePath,
-		},
-		{
-			Label:   "File Path Cap",
-			Message: fmt.Sprintf("%d", f.filePathsCap),
-		},
-		{
-			Label:   "Match Pattern",
-			Message: f.match,
-		},
-		{
-			Label:   "Ignore Pattern",
-			Message: f.ignore,
-		},
-		{
-			Label:   "Min Errors Threshold",
-			Message: fmt.Sprintf("%d", f.min),
-		},
-		{
-			Label:   "Monitoring Every",
-			Message: fmt.Sprintf("%d", f.every),
-		},
-	}
+	details := pkg.GetHealthCheckDetails(&f, version)
 	for idx, filePath := range filePaths {
 		details = append(details, gmt.Details{
 			Label:   fmt.Sprintf("File Path %d", idx+1),
@@ -193,7 +128,7 @@ func sendHealthCheck() {
 
 	hostname, _ := os.Hostname()
 
-	err := gmt.Send(hostname, details, f.msTeamsHook, f.proxy)
+	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
 	if err != nil {
 		slog.Error("Error sending to Teams", "error", err.Error())
 	} else {
@@ -202,14 +137,14 @@ func sendHealthCheck() {
 }
 
 func validate() {
-	if f.filePath == "" {
+	if f.FilePath == "" {
 		slog.Error("file-path is required")
 		os.Exit(1)
 	}
 }
 
 func watch(filePath string) {
-	watcher, err := pkg.NewWatcher(f.dbPath, filePath, f.match, f.ignore)
+	watcher, err := pkg.NewWatcher(f.DBPath, filePath, f.Match, f.Ignore)
 	if err != nil {
 		slog.Error("Error creating watcher", "error", err.Error(), "filePath", filePath)
 		return
@@ -225,68 +160,37 @@ func watch(filePath string) {
 	}
 	slog.Info("Error count", "count", result.ErrorCount)
 
-	// first line
-	slog.Info("1st line", "line", pkg.Truncate(result.FirstLine, 50))
-
-	// last line
-	slog.Info("Last line", "line", pkg.Truncate(result.LastLine, 50))
+	slog.Info("1st line", "date", result.FirstDate, "line", pkg.Truncate(result.FirstLine, pkg.TruncateMax))
+	slog.Info("Preview line", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
+	slog.Info("Last line", "date", result.LastDate, "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
 
 	slog.Info("Scanning complete", "filePath", result.FilePath)
 
 	if result.ErrorCount < 0 {
 		return
 	}
-	if result.ErrorCount < f.min {
+	if result.ErrorCount < f.Min {
 		return
 	}
 	notify(result)
-	if f.postMin != "" {
-		if _, err := pkg.ExecShell(f.postMin); err != nil {
+	if f.PostMin != "" {
+		if _, err := pkg.ExecShell(f.PostMin); err != nil {
 			slog.Error("Error running post command", "error", err.Error())
 		}
 	}
 }
 
 func notify(result *pkg.ScanResult) {
-	if f.msTeamsHook == "" {
+	if f.MSTeamsHook == "" {
 		return
 	}
 
 	slog.Info("Sending to MS Teams")
-	details := []gmt.Details{
-		{
-			Label:   "File Path",
-			Message: result.FilePath,
-		},
-		{
-			Label:   "Match Pattern",
-			Message: f.match,
-		},
-		{
-			Label:   "Ignore Pattern",
-			Message: f.ignore,
-		},
-		{
-			Label:   "Min Errors Threshold",
-			Message: fmt.Sprintf("%d", f.min),
-		},
-		{
-			Label:   "Total Errors Found",
-			Message: fmt.Sprintf("%d", result.ErrorCount),
-		},
-		{
-			Label:   "First Line",
-			Message: result.FirstLine,
-		},
-		{
-			Label:   "Last Line",
-			Message: result.LastLine,
-		},
-	}
+	details := pkg.GetAlertDetails(&f, result)
 
 	hostname, _ := os.Hostname()
 
-	err := gmt.Send(hostname, details, f.msTeamsHook, f.proxy)
+	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
 	if err != nil {
 		slog.Error("Error sending to Teams", "error", err.Error())
 	} else {
@@ -295,35 +199,35 @@ func notify(result *pkg.ScanResult) {
 }
 
 func flags() {
-	flag.StringVar(&f.filePath, "file-path", "", "full path to the log file")
-	flag.StringVar(&f.dbPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file")
-	flag.StringVar(&f.match, "match", "", "regex for matching errors (empty to match all lines)")
-	flag.StringVar(&f.ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
-	flag.StringVar(&f.postAlways, "post-always", "", "run this shell command after every scan")
-	flag.StringVar(&f.postMin, "post-min", "", "run this shell command after every scan when min errors are found")
-	flag.Uint64Var(&f.every, "every", 0, "run every n seconds (0 to run once)")
-	flag.Uint64Var(&f.healthCheckEvery, "health-check-every", 86400, "run health check every n seconds (0 to disable)")
-	flag.IntVar(&f.logLevel, "log-level", 0, "log level (0=info, 1=debug)")
-	flag.IntVar(&f.filePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
-	flag.IntVar(&f.min, "min", 1, "on minimum num of matches, it should notify")
-	flag.BoolVar(&f.version, "version", false, "")
+	flag.StringVar(&f.FilePath, "file-path", "", "full path to the log file")
+	flag.StringVar(&f.DBPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file")
+	flag.StringVar(&f.Match, "match", "", "regex for matching errors (empty to match all lines)")
+	flag.StringVar(&f.Ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
+	flag.StringVar(&f.PostAlways, "post-always", "", "run this shell command after every scan")
+	flag.StringVar(&f.PostMin, "post-min", "", "run this shell command after every scan when min errors are found")
+	flag.Uint64Var(&f.Every, "every", 0, "run every n seconds (0 to run once)")
+	flag.Uint64Var(&f.HealthCheckEvery, "health-check-every", 0, "run health check every n seconds (0 to disable)")
+	flag.IntVar(&f.LogLevel, "log-level", 0, "log level (0=info, 1=debug)")
+	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
+	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
+	flag.BoolVar(&f.Version, "version", false, "")
 
-	flag.StringVar(&f.proxy, "proxy", "", "http proxy for webhooks")
-	flag.StringVar(&f.msTeamsHook, "ms-teams-hook", "", "ms teams webhook")
+	flag.StringVar(&f.Proxy, "proxy", "", "http proxy for webhooks")
+	flag.StringVar(&f.MSTeamsHook, "ms-teams-hook", "", "ms teams webhook")
 
 	flag.Parse()
 }
 
 func parseProxy() string {
 	systemProxy := pkg.SystemProxy()
-	if systemProxy != "" && f.proxy == "" {
-		f.proxy = systemProxy
+	if systemProxy != "" && f.Proxy == "" {
+		f.Proxy = systemProxy
 	}
-	return f.proxy
+	return f.Proxy
 }
 
 func wantsVersion() {
-	if f.version {
+	if f.Version {
 		slog.Info("Version", "version", version)
 		os.Exit(0)
 	}
