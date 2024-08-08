@@ -76,8 +76,10 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
     	on minimum num of matches, it should notify (default 1)
   -ms-teams-hook string
     	ms teams webhook
-  -post string
+  -post-always string
     	run this shell command after every scan
+  -post-min string
+    	run this shell command after every scan when min errors are found
   -proxy string
     	http proxy for webhooks
   -version
