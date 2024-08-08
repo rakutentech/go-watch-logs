@@ -71,7 +71,7 @@ func GetAlertDetails(f *Flags, result *ScanResult) []gmt.Details {
 		},
 		{
 			Label:   "First Line",
-			Message: Truncate(result.FirstLine, TRUNCATE_MAX),
+			Message: Truncate(result.FirstLine, TruncateMax),
 		},
 		{
 			Label:   "Mid Lines",
@@ -79,7 +79,7 @@ func GetAlertDetails(f *Flags, result *ScanResult) []gmt.Details {
 		},
 		{
 			Label:   "Last Line",
-			Message: Truncate(result.LastLine, TRUNCATE_MAX),
+			Message: Truncate(result.LastLine, TruncateMax),
 		},
 	}
 	if result.FirstDate != "" || result.LastDate != "" {

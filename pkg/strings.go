@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	TRUNCATE_MAX = 200
+	TruncateMax = 200
 )
 
 func Hash(s string) string {

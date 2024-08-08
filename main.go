@@ -160,9 +160,9 @@ func watch(filePath string) {
 	}
 	slog.Info("Error count", "count", result.ErrorCount)
 
-	slog.Info("1st line", "line", pkg.Truncate(result.FirstLine, 150))
-	slog.Info("Preview line", "line", pkg.Truncate(result.PreviewLine, 150))
-	slog.Info("Last line", "line", pkg.Truncate(result.LastLine, 150))
+	slog.Info("1st line", "line", pkg.Truncate(result.FirstLine, pkg.TruncateMax))
+	slog.Info("Preview line", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
+	slog.Info("Last line", "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
 
 	slog.Info("Scanning complete", "filePath", result.FilePath)
 
@@ -206,7 +206,7 @@ func flags() {
 	flag.StringVar(&f.PostAlways, "post-always", "", "run this shell command after every scan")
 	flag.StringVar(&f.PostMin, "post-min", "", "run this shell command after every scan when min errors are found")
 	flag.Uint64Var(&f.Every, "every", 0, "run every n seconds (0 to run once)")
-	flag.Uint64Var(&f.HealthCheckEvery, "health-check-every", 86400, "run health check every n seconds (0 to disable)")
+	flag.Uint64Var(&f.HealthCheckEvery, "health-check-every", 0, "run health check every n seconds (0 to disable)")
 	flag.IntVar(&f.LogLevel, "log-level", 0, "log level (0=info, 1=debug)")
 	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
