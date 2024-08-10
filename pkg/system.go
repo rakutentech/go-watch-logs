@@ -33,7 +33,7 @@ func PrintMemUsage(f *Flags) {
 		"HeapSys (Bytes)", m.HeapSys,
 	)
 	if f.MemLimit > 0 && m.Alloc > uint64(f.MemLimit*1024*1024) {
-		SendHealthCheck(f, &m)
+		sendPanicCheck(f, &m)
 		panic("Memory Limit Exceeded")
 	}
 }
@@ -48,9 +48,14 @@ func ExecShell(command string) (string, error) {
 	return string(out), err
 }
 
-func SendHealthCheck(f *Flags, m *runtime.MemStats) {
+func sendPanicCheck(f *Flags, m *runtime.MemStats) {
 	details := GetPanicDetails(f, m)
-	slog.Warn("Sending Panic Notify", "details", details)
+	var logDetails []interface{}
+	for _, detail := range details {
+		logDetails = append(logDetails, detail.Label, detail.Message)
+	}
+	slog.Warn("Sending Panic Check", logDetails...)
+
 	if f.MSTeamsHook == "" {
 		return
 	}

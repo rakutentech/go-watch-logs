@@ -122,7 +122,12 @@ func sendHealthCheck() {
 			Message: filePath,
 		})
 	}
-	slog.Info("Sending Health Check Notify", "details", details)
+
+	var logDetails []interface{}
+	for _, detail := range details {
+		logDetails = append(logDetails, detail.Label, detail.Message)
+	}
+	slog.Info("Sending Health Check Notify", logDetails...)
 	if f.MSTeamsHook == "" {
 		return
 	}
@@ -184,7 +189,12 @@ func watch(filePath string) {
 func notify(result *pkg.ScanResult) {
 	slog.Info("Sending to MS Teams")
 	details := pkg.GetAlertDetails(&f, result)
-	slog.Info("Sending Alert Notify", "details", details)
+
+	var logDetails []interface{}
+	for _, detail := range details {
+		logDetails = append(logDetails, detail.Label, detail.Message)
+	}
+	slog.Info("Sending Alert Notify", logDetails...)
 
 	if f.MSTeamsHook == "" {
 		return
