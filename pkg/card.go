@@ -2,10 +2,35 @@ package pkg
 
 import (
 	"fmt"
+	"runtime"
 
 	gmt "github.com/kevincobain2000/go-msteams/src"
 )
 
+func GetPanicDetails(f *Flags, m *runtime.MemStats) []gmt.Details {
+	return []gmt.Details{
+		{
+			Label:   "File Path",
+			Message: f.FilePath,
+		},
+		{
+			Label:   "Match Pattern",
+			Message: f.Match,
+		},
+		{
+			Label:   "Ignore Pattern",
+			Message: f.Ignore,
+		},
+		{
+			Label:   "Mem Limit (MB) Exceeded",
+			Message: fmt.Sprintf("%d", f.MemLimit),
+		},
+		{
+			Label:   "Alloc (MB)",
+			Message: fmt.Sprintf("%d", BToMb(m.Alloc)),
+		},
+	}
+}
 func GetHealthCheckDetails(f *Flags, version string) []gmt.Details {
 	return []gmt.Details{
 		{
