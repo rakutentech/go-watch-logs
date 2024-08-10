@@ -60,7 +60,7 @@ func main() {
 		watch(filePath)
 	}
 	if f.Every > 0 {
-		if err := gocron.Every(f.Every).Second().Do(pkg.PrintMemUsage); err != nil {
+		if err := gocron.Every(1).Second().Do(pkg.PrintMemUsage, &f); err != nil {
 			slog.Error("Error scheduling memory usage", "error", err.Error())
 			return
 		}
@@ -115,15 +115,16 @@ func syncFilePaths() {
 }
 
 func sendHealthCheck() {
-	if f.MSTeamsHook == "" {
-		return
-	}
 	details := pkg.GetHealthCheckDetails(&f, version)
 	for idx, filePath := range filePaths {
 		details = append(details, gmt.Details{
 			Label:   fmt.Sprintf("File Path %d", idx+1),
 			Message: filePath,
 		})
+	}
+	slog.Info("Sending Health Check Notify", "details", details)
+	if f.MSTeamsHook == "" {
+		return
 	}
 
 	hostname, _ := os.Hostname()
@@ -181,12 +182,13 @@ func watch(filePath string) {
 }
 
 func notify(result *pkg.ScanResult) {
+	slog.Info("Sending to MS Teams")
+	details := pkg.GetAlertDetails(&f, result)
+	slog.Info("Sending Alert Notify", "details", details)
+
 	if f.MSTeamsHook == "" {
 		return
 	}
-
-	slog.Info("Sending to MS Teams")
-	details := pkg.GetAlertDetails(&f, result)
 
 	hostname, _ := os.Hostname()
 
@@ -208,6 +210,7 @@ func flags() {
 	flag.Uint64Var(&f.Every, "every", 0, "run every n seconds (0 to run once)")
 	flag.Uint64Var(&f.HealthCheckEvery, "health-check-every", 0, "run health check every n seconds (0 to disable)")
 	flag.IntVar(&f.LogLevel, "log-level", 0, "log level (0=info, 1=debug)")
+	flag.IntVar(&f.MemLimit, "mem-limit", 100, "memory limit in MB (0 to disable)")
 	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
 	flag.BoolVar(&f.Version, "version", false, "")

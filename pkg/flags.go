@@ -14,6 +14,7 @@ type Flags struct {
 	HealthCheckEvery uint64
 	Proxy            string
 	LogLevel         int
+	MemLimit         int
 	MSTeamsHook      string
 	Version          bool
 }
