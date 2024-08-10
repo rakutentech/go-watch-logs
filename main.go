@@ -123,7 +123,7 @@ func sendHealthCheck() {
 		})
 	}
 
-	var logDetails []interface{}
+	var logDetails []interface{} // nolint: prealloc
 	for _, detail := range details {
 		logDetails = append(logDetails, detail.Label, detail.Message)
 	}
@@ -190,7 +190,7 @@ func notify(result *pkg.ScanResult) {
 	slog.Info("Sending to MS Teams")
 	details := pkg.GetAlertDetails(&f, result)
 
-	var logDetails []interface{}
+	var logDetails []interface{} // nolint: prealloc
 	for _, detail := range details {
 		logDetails = append(logDetails, detail.Label, detail.Message)
 	}

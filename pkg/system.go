@@ -50,7 +50,7 @@ func ExecShell(command string) (string, error) {
 
 func sendPanicCheck(f *Flags, m *runtime.MemStats) {
 	details := GetPanicDetails(f, m)
-	var logDetails []interface{}
+	var logDetails []interface{} // nolint: prealloc
 	for _, detail := range details {
 		logDetails = append(logDetails, detail.Label, detail.Message)
 	}
