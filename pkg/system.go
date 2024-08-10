@@ -49,11 +49,11 @@ func ExecShell(command string) (string, error) {
 }
 
 func SendHealthCheck(f *Flags, m *runtime.MemStats) {
+	details := GetPanicDetails(f, m)
+	slog.Warn("Sending Panic Notify", "details", details)
 	if f.MSTeamsHook == "" {
 		return
 	}
-	details := GetPanicDetails(f, m)
-	slog.Warn("Sending Panic Notify", "details", details)
 
 	hostname, _ := os.Hostname()
 
