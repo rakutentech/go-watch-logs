@@ -39,7 +39,7 @@ func GetHealthCheckDetails(f *Flags, version string) []gmt.Details {
 		},
 		{
 			Label:   "Next Ping",
-			Message: fmt.Sprintf("%d seconds", f.HealthCheckEvery),
+			Message: fmt.Sprintf("%d secs", f.HealthCheckEvery),
 		},
 		{
 			Label:   "Version",
@@ -67,7 +67,7 @@ func GetHealthCheckDetails(f *Flags, version string) []gmt.Details {
 		},
 		{
 			Label:   "Monitoring Every",
-			Message: fmt.Sprintf("%d", f.Every),
+			Message: fmt.Sprintf("%d secs", f.Every),
 		},
 	}
 }
@@ -109,8 +109,8 @@ func GetAlertDetails(f *Flags, result *ScanResult) []gmt.Details {
 	}
 	if result.FirstDate != "" || result.LastDate != "" {
 		details = append(details, gmt.Details{
-			Label:   "From - To",
-			Message: fmt.Sprintf("%s - %s", result.FirstDate, result.LastDate),
+			Label:   "Time Range",
+			Message: fmt.Sprintf("%s to %s", result.FirstDate, result.LastDate),
 		})
 	}
 	return details
