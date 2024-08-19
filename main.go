@@ -129,6 +129,7 @@ func sendHealthCheck() {
 	}
 	slog.Info("Sending Health Check Notify", logDetails...)
 	if f.MSTeamsHook == "" {
+		slog.Warn("MS Teams hook not set")
 		return
 	}
 
@@ -197,6 +198,7 @@ func notify(result *pkg.ScanResult) {
 	slog.Info("Sending Alert Notify", logDetails...)
 
 	if f.MSTeamsHook == "" {
+		slog.Warn("MS Teams hook not set")
 		return
 	}
 

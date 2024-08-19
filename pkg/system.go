@@ -57,6 +57,7 @@ func sendPanicCheck(f *Flags, m *runtime.MemStats) {
 	slog.Warn("Sending Panic Check", logDetails...)
 
 	if f.MSTeamsHook == "" {
+		slog.Warn("MS Teams hook not set")
 		return
 	}
 
