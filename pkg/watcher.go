@@ -109,6 +109,10 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		bytesRead += int64(len(line)) + 1 // Adding 1 for the newline character
 		currentLineNum++
 		linesRead = currentLineNum - w.lastLineNum
+		// convert to positive number
+		if linesRead < 0 {
+			linesRead = -linesRead
+		}
 		slog.Debug("Scanning line", "line", string(line), "lineNum", currentLineNum, "linesRead", linesRead)
 		if w.ignorePattern != "" && ri.Match(line) {
 			continue
@@ -133,6 +137,9 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	matchPercentage := 0.0
 	if linesRead > 0 {
 		matchPercentage = float64(errorCounts) * 100 / float64(linesRead)
+		if matchPercentage > 100 {
+			matchPercentage = 100
+		}
 	}
 
 	// Restrict to two decimal places
