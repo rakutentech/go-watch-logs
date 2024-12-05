@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"database/sql"
 	"io"
+	"log/slog"
 	"os"
 	"regexp"
 	"strings"
@@ -50,13 +51,15 @@ func NewWatcher(
 }
 
 type ScanResult struct {
-	FilePath    string
-	ErrorCount  int
-	FirstLine   string
-	FirstDate   string
-	PreviewLine string
-	LastLine    string
-	LastDate    string
+	FilePath     string
+	ErrorCount   int
+	ErrorPercent float64
+	LinesRead    int
+	FirstLine    string
+	FirstDate    string
+	PreviewLine  string
+	LastLine     string
+	LastDate     string
 }
 
 func (w *Watcher) Scan() (*ScanResult, error) {
@@ -98,12 +101,15 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 
 	scanner := bufio.NewScanner(file)
 	currentLineNum := 1
+	linesRead := 0
 	bytesRead := w.lastFileSize
 
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		bytesRead += int64(len(line)) + 1 // Adding 1 for the newline character
 		currentLineNum++
+		linesRead = currentLineNum - w.lastLineNum
+		slog.Debug("Scanning line", "line", string(line), "lineNum", currentLineNum, "linesRead", linesRead)
 		if w.ignorePattern != "" && ri.Match(line) {
 			continue
 		}
@@ -124,6 +130,13 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		return nil, err
 	}
 
+	matchPercentage := 0.0
+	if linesRead > 0 {
+		matchPercentage = float64(errorCounts) * 100 / float64(linesRead)
+	}
+
+	// Restrict to two decimal places
+	matchPercentage = float64(int(matchPercentage*100)) / 100
 	w.lastLineNum = currentLineNum
 	w.lastFileSize = bytesRead
 	if err := w.saveState(); err != nil {
@@ -135,13 +148,15 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		return nil, err
 	}
 	return &ScanResult{
-		ErrorCount:  errorCounts,
-		FirstLine:   firstLine,
-		FirstDate:   SearchDate(firstLine),
-		PreviewLine: previewLine,
-		LastLine:    lastLine,
-		LastDate:    SearchDate(lastLine),
-		FilePath:    w.filePath,
+		ErrorCount:   errorCounts,
+		FirstLine:    firstLine,
+		FirstDate:    SearchDate(firstLine),
+		PreviewLine:  previewLine,
+		LastLine:     lastLine,
+		LastDate:     SearchDate(lastLine),
+		FilePath:     w.filePath,
+		ErrorPercent: matchPercentage,
+		LinesRead:    linesRead,
 	}, nil
 }
 

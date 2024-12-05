@@ -32,7 +32,7 @@ func PrintMemUsage(f *Flags) {
 		"HeapAlloc (MB)", BToMb(m.HeapAlloc),
 		"HeapSys (Bytes)", m.HeapSys,
 	)
-	if f.MemLimit > 0 && m.Alloc > uint64(f.MemLimit*1024*1024) {
+	if f.MemLimit > 0 && m.Alloc > uint64(f.MemLimit)*1024*1024 {
 		sendPanicCheck(f, &m)
 		panic("Memory Limit Exceeded")
 	}

@@ -170,6 +170,8 @@ func watch(filePath string) {
 	slog.Info("1st line", "date", result.FirstDate, "line", pkg.Truncate(result.FirstLine, pkg.TruncateMax))
 	slog.Info("Preview line", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
 	slog.Info("Last line", "date", result.LastDate, "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
+	slog.Info("Error percent", "percent", fmt.Sprintf("%.2f", result.ErrorPercent)+"%")
+	slog.Info("Lines read", "count", result.LinesRead)
 
 	slog.Info("Scanning complete", "filePath", result.FilePath)
 

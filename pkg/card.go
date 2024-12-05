@@ -91,6 +91,10 @@ func GetAlertDetails(f *Flags, result *ScanResult) []gmt.Details {
 			Message: fmt.Sprintf("%d", f.Min),
 		},
 		{
+			Label:   "Lines Read",
+			Message: fmt.Sprintf("%d", result.LinesRead),
+		},
+		{
 			Label:   "Total Errors Found",
 			Message: fmt.Sprintf("%d", result.ErrorCount),
 		},
@@ -105,6 +109,10 @@ func GetAlertDetails(f *Flags, result *ScanResult) []gmt.Details {
 		{
 			Label:   "Last Line",
 			Message: Truncate(result.LastLine, TruncateMax),
+		},
+		{
+			Label:   "Error Percentage",
+			Message: fmt.Sprintf("%.2f", result.ErrorPercent) + "%",
 		},
 	}
 	if result.FirstDate != "" || result.LastDate != "" {
