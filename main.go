@@ -191,18 +191,18 @@ func watch(filePath string) {
 
 func notify(result *pkg.ScanResult) {
 	slog.Info("Sending to MS Teams")
-	details := pkg.GetAlertDetails(&f, result)
+	details := pkg.GetAlertDetails(&f, version, result)
 
 	var logDetails []interface{} // nolint: prealloc
 	for _, detail := range details {
 		logDetails = append(logDetails, detail.Label, detail.Message)
 	}
-	slog.Info("Sending Alert Notify", logDetails...)
 
 	if f.MSTeamsHook == "" {
 		slog.Warn("MS Teams hook not set")
 		return
 	}
+	slog.Info("Sending Alert Notify", logDetails...)
 
 	hostname, _ := os.Hostname()
 

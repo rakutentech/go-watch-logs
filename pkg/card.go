@@ -72,11 +72,19 @@ func GetHealthCheckDetails(f *Flags, version string) []gmt.Details {
 	}
 }
 
-func GetAlertDetails(f *Flags, result *ScanResult) []gmt.Details {
+func GetAlertDetails(f *Flags, version string, result *ScanResult) []gmt.Details {
 	details := []gmt.Details{
+		{
+			Label:   "go-watch-log version",
+			Message: version,
+		},
 		{
 			Label:   "File Path",
 			Message: result.FilePath,
+		},
+		{
+			Label:   "Running Every",
+			Message: fmt.Sprintf("%d secs", f.Every),
 		},
 		{
 			Label:   "Match Pattern",
