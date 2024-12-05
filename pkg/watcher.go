@@ -113,7 +113,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 				firstLine = lineStr
 			}
 			if len(previewLine) < 1000 {
-				previewLine += lineStr
+				previewLine += lineStr + "\n"
 			}
 			lastLine = lineStr
 			errorCounts++
