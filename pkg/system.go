@@ -23,7 +23,7 @@ func SystemProxy() string {
 func PrintMemUsage(f *Flags) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	slog.Info("Memory Usage",
+	slog.Debug("Memory Usage",
 		"Alloc (MB)", BToMb(m.Alloc),
 		"Alloc (Bytes)", m.Alloc,
 		"Sys (MB)", BToMb(m.Sys),
