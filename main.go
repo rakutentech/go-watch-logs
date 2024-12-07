@@ -35,7 +35,7 @@ func main() {
 	}
 	if len(newFilePaths) == 0 {
 		slog.Error("No files found", "filePath", f.FilePath)
-		return
+		slog.Warn("Keep watching for new files")
 	}
 	if len(newFilePaths) > f.FilePathsCap {
 		slog.Warn("Too many files found", "count", len(newFilePaths), "cap", f.FilePathsCap)
@@ -105,6 +105,7 @@ func syncFilePaths() {
 	}
 	if len(newFilePaths) == 0 {
 		slog.Error("No files found", "filePath", f.FilePath)
+		slog.Warn("Keep watching for new files")
 		return
 	}
 
