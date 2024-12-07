@@ -10,6 +10,7 @@ require (
 	github.com/lmittmann/tint v1.0.5
 	github.com/mattn/go-isatty v0.0.20
 	github.com/stretchr/testify v1.9.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (
