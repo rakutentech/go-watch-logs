@@ -70,3 +70,24 @@ func sendPanicCheck(f *Flags, m *runtime.MemStats) {
 		slog.Info("Successfully sent to MS Teams")
 	}
 }
+
+func ReadFromPipeInput() string {
+	fi, _ := os.Stdin.Stat()
+	if (fi.Mode() & os.ModeCharDevice) == 0 {
+		buf := make([]byte, 0, 4096)
+		tmp := make([]byte, 256)
+		for {
+			n, err := os.Stdin.Read(tmp)
+			if n == 0 {
+				break
+			}
+			if err != nil {
+				slog.Error("Error reading from pipe", "error", err.Error())
+				break
+			}
+			buf = append(buf, tmp[:n]...)
+		}
+		return string(buf)
+	}
+	return ""
+}

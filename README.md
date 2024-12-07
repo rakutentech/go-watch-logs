@@ -103,4 +103,5 @@ BenchmarkLogRotation-10               	    1036	   1175464 ns/op	   12930 B/op	 
 - **v1.0.1** Health Check
 - **v1.0.2** `--post`, `--post-min`, `--health-check-every` and preview added
 - **v1.0.7** Added percentage
+- **v1.0.10** Better tint and added `-test` flag and `-f` for short form of `--file-path`
 

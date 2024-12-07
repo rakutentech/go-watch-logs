@@ -16,5 +16,6 @@ type Flags struct {
 	LogLevel         int
 	MemLimit         int
 	MSTeamsHook      string
+	Test             bool
 	Version          bool
 }

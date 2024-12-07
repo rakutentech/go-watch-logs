@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"regexp"
 	"sync"
 
 	"github.com/jasonlvhit/gocron"
@@ -26,6 +27,11 @@ func main() {
 	parseProxy()
 	wantsVersion()
 	validate()
+
+	if f.Test {
+		testIt()
+		return
+	}
 
 	var err error
 	newFilePaths, err := pkg.FilesByPattern(f.FilePath)
@@ -215,8 +221,37 @@ func notify(result *pkg.ScanResult) {
 	}
 }
 
+func testIt() {
+	fps, err := pkg.FilesByPattern(f.FilePath)
+	if err != nil {
+		slog.Error("Error finding files", "error", err.Error())
+	}
+	slog.Info("Files found", "count", len(fps))
+	for _, filePath := range fps {
+		slog.Info("Found file", "filePath", filePath)
+	}
+	str := pkg.ReadFromPipeInput()
+	if str == "" {
+		slog.Error("No input found")
+		slog.Info("Usage echo 'test123' | go-watch-logs --match=123 -test")
+		return
+	}
+	str = str[:len(str)-1] // strip new line
+	re, err := regexp.Compile(f.Match)
+	if err != nil {
+		slog.Error("Error compiling regex", "error", err.Error())
+		return
+	}
+	if re.Match([]byte(str)) {
+		slog.Info("Matched", "Match Regex", f.Match, "input", str, "Match Found", re.FindString(str))
+	} else {
+		slog.Warn("Not matched", "Match", f.Match, "str", str)
+	}
+}
+
 func flags() {
 	flag.StringVar(&f.FilePath, "file-path", "", "full path to the log file")
+	flag.StringVar(&f.FilePath, "f", "", "(short for --file-path) full path to the log file")
 	flag.StringVar(&f.DBPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file")
 	flag.StringVar(&f.Match, "match", "", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.Ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
@@ -229,6 +264,13 @@ func flags() {
 	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
 	flag.BoolVar(&f.Version, "version", false, "")
+	flag.BoolVar(&f.Test, "test", false, `Quickly test paths or regex
+
+echo test123 | go-watch-logs --match=123 --test
+# will test if the input matches the regex
+go-watch-logs --file-path=./ssl_access.*log --test
+# will test if the file paths are found and list them
+	`)
 
 	flag.StringVar(&f.Proxy, "proxy", "", "http proxy for webhooks")
 	flag.StringVar(&f.MSTeamsHook, "ms-teams-hook", "", "ms teams webhook")
