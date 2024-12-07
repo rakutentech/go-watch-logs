@@ -265,11 +265,10 @@ func flags() {
 	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
 	flag.BoolVar(&f.Version, "version", false, "")
 	flag.BoolVar(&f.Test, "test", false, `Quickly test paths or regex
-
-echo test123 | go-watch-logs --match=123 --test
 # will test if the input matches the regex
-go-watch-logs --file-path=./ssl_access.*log --test
+echo test123 | go-watch-logs --match=123 --test
 # will test if the file paths are found and list them
+go-watch-logs --file-path=./ssl_access.*log --test
 	`)
 
 	flag.StringVar(&f.Proxy, "proxy", "", "http proxy for webhooks")

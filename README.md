@@ -88,11 +88,10 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
     	http proxy for webhooks
   -test
     	Quickly test paths or regex
-
+        # will test if the input matches the regex
     	echo test123 | go-watch-logs --match=123 --test
-    	# will test if the input matches the regex
+        # will test if the file paths are found and list them
     	go-watch-logs --file-path=./ssl_access.*log --test
-    	# will test if the file paths are found and list them
 
   -version
 ```
