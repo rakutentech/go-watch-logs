@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"regexp"
 	"sync"
 
 	"github.com/jasonlvhit/gocron"
@@ -29,7 +28,7 @@ func main() {
 	validate()
 
 	if f.Test {
-		testIt()
+		pkg.TestIt(f.FilePath, f.Match)
 		return
 	}
 
@@ -218,34 +217,6 @@ func notify(result *pkg.ScanResult) {
 		slog.Error("Error sending to Teams", "error", err.Error())
 	} else {
 		slog.Info("Successfully sent to MS Teams")
-	}
-}
-
-func testIt() {
-	fps, err := pkg.FilesByPattern(f.FilePath)
-	if err != nil {
-		slog.Error("Error finding files", "error", err.Error())
-	}
-	slog.Info("Files found", "count", len(fps))
-	for _, filePath := range fps {
-		slog.Info("Found file", "filePath", filePath)
-	}
-	str := pkg.ReadFromPipeInput()
-	if str == "" {
-		slog.Error("No input found")
-		slog.Info("Usage echo 'test123' | go-watch-logs --match=123 -test")
-		return
-	}
-	str = str[:len(str)-1] // strip new line
-	re, err := regexp.Compile(f.Match)
-	if err != nil {
-		slog.Error("Error compiling regex", "error", err.Error())
-		return
-	}
-	if re.Match([]byte(str)) {
-		slog.Info("Matched", "Match Regex", f.Match, "input", str, "Match Found", re.FindString(str))
-	} else {
-		slog.Warn("Not matched", "Match", f.Match, "str", str)
 	}
 }
 
