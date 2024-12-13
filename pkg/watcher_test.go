@@ -31,7 +31,7 @@ func TestNewWatcher(t *testing.T) {
 	matchPattern := "error:1" // nolint: goconst
 	ignorePattern := "ignore" // nolint: goconst
 
-	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
+	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
 	assert.NoError(t, err)
 	assert.NotNil(t, watcher)
 
@@ -52,7 +52,7 @@ error:1`
 	matchPattern := `error:1` // nolint: goconst
 	ignorePattern := `ignore` // nolint: goconst
 
-	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
+	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
 	assert.NoError(t, err)
 	defer watcher.Close()
 
@@ -75,7 +75,7 @@ line2`
 	matchPattern := `error:1` // nolint: goconst
 	ignorePattern := `ignore` // nolint: goconst
 
-	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
+	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
 	assert.NoError(t, err)
 	defer watcher.Close()
 
@@ -112,7 +112,7 @@ error:1`
 	matchPattern := `error:1`
 	ignorePattern := `ignore`
 
-	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
+	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -132,7 +132,7 @@ func BenchmarkLoadAndSaveState(b *testing.B) {
 	matchPattern := "error:1"
 	ignorePattern := "ignore"
 
-	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
+	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func BenchmarkLoadAndSaveState(b *testing.B) {
 	watcher.lastLineNum = 10
 
 	for i := 0; i < b.N; i++ {
-		_, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
+		_, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -162,7 +162,7 @@ line2`
 	matchPattern := `error:1`
 	ignorePattern := `ignore`
 
-	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern)
+	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
 	if err != nil {
 		b.Fatal(err)
 	}

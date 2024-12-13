@@ -27,6 +27,7 @@ func NewWatcher(
 	filePath string,
 	matchPattern string,
 	ignorePattern string,
+	anomaly bool,
 ) (*Watcher, error) {
 	dbName += ".sqlite"
 	db, err := InitDB(dbName)

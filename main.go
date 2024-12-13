@@ -157,7 +157,7 @@ func validate() {
 }
 
 func watch(filePath string) {
-	watcher, err := pkg.NewWatcher(f.DBPath, filePath, f.Match, f.Ignore)
+	watcher, err := pkg.NewWatcher(f.DBPath, filePath, f.Match, f.Ignore, f.Anomaly)
 	if err != nil {
 		slog.Error("Error creating watcher", "error", err.Error(), "filePath", filePath)
 		return
@@ -233,6 +233,7 @@ func flags() {
 	flag.IntVar(&f.MemLimit, "mem-limit", 100, "memory limit in MB (0 to disable)")
 	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
+	flag.BoolVar(&f.Anomaly, "anomaly", false, "")
 	flag.BoolVar(&f.Version, "version", false, "")
 	flag.BoolVar(&f.Test, "test", false, `Quickly test paths or regex
 # will test if the input matches the regex
