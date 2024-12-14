@@ -8,6 +8,7 @@ type Flags struct {
 	DBPath       string
 	PostAlways   string
 	PostMin      string
+	Log          string
 
 	Min              int
 	Every            uint64

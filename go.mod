@@ -8,12 +8,13 @@ require (
 	github.com/gravwell/gravwell/v3 v3.8.34
 	github.com/jasonlvhit/gocron v0.0.1
 	github.com/kevincobain2000/go-msteams v1.1.1
-	github.com/lmittmann/tint v1.0.5
 	github.com/mattn/go-isatty v0.0.20
+	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/stretchr/testify v1.9.0
 )
 
 require (
+	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/color v1.16.0 // indirect
@@ -23,6 +24,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	golang.org/x/sys v0.23.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.57.0 // indirect
 	modernc.org/mathutil v1.6.0 // indirect

@@ -22,7 +22,10 @@ var filePathsMutex sync.Mutex
 
 func main() {
 	flags()
-	pkg.SetupLoggingStdout(f.LogLevel)
+	pkg.SetupLoggingStdout(f.LogLevel, f.Log)
+	flag.VisitAll(func(f *flag.Flag) {
+		slog.Info(f.Name, slog.String("value", f.Value.String()))
+	})
 	parseProxy()
 	wantsVersion()
 	validate()
@@ -220,9 +223,10 @@ func notify(result *pkg.ScanResult) {
 }
 
 func flags() {
-	flag.StringVar(&f.FilePath, "file-path", "", "full path to the log file")
-	flag.StringVar(&f.FilePath, "f", "", "(short for --file-path) full path to the log file")
-	flag.StringVar(&f.DBPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file")
+	flag.StringVar(&f.FilePath, "file-path", "", "full path to the file to watch")
+	flag.StringVar(&f.FilePath, "f", "", "(short for --file-path) full path to the file to watch")
+	flag.StringVar(&f.Log, "log", "", "full path to output log file")
+	flag.StringVar(&f.DBPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file. Note dir must exist prior")
 	flag.StringVar(&f.Match, "match", "", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.Ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
 	flag.StringVar(&f.PostAlways, "post-always", "", "run this shell command after every scan")
