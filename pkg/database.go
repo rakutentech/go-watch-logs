@@ -9,12 +9,21 @@ import (
 	_ "github.com/glebarez/go-sqlite" // nolint: revive
 )
 
+var (
+	db *sql.DB
+)
+
 func InitDB(dbName string) (*sql.DB, error) {
-	slog.Info("Initializing database", "dbName", dbName)
-	db, err := sql.Open("sqlite", dbName)
-	if err != nil {
-		slog.Error("Error opening database", "error", err.Error())
-		return nil, err
+	var err error
+	if db == nil {
+		slog.Info("Initializing database", "dbName", dbName)
+		db, err = sql.Open("sqlite", dbName)
+		if err != nil {
+			slog.Error("Error opening database", "error", err.Error())
+			return nil, err
+		}
+	} else {
+		slog.Info("Database already initialized")
 	}
 
 	_, err = db.Exec(`
@@ -38,8 +47,8 @@ func InitDB(dbName string) (*sql.DB, error) {
 		slog.Error("Error creating plot table", "error", err.Error())
 		return nil, err
 	}
-	db.SetMaxOpenConns(5)
-	db.SetMaxIdleConns(5)
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(10)
 	db.SetConnMaxLifetime(time.Hour)
 
 	return db, nil

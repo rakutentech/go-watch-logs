@@ -19,6 +19,7 @@ func SetupLoggingStdout(logLevel int, logFile string) error {
 	}
 	if logFile == "" {
 		slog.SetDefault(slog.New(slogcolor.NewHandler(os.Stderr, opts)))
+		return nil
 	}
 	slog.SetDefault(slog.New(slogcolor.NewHandler(&lumberjack.Logger{
 		Filename:   logFile,

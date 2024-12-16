@@ -22,7 +22,7 @@ var filePathsMutex sync.Mutex
 
 func main() {
 	flags()
-	pkg.SetupLoggingStdout(f.LogLevel, f.Log)
+	pkg.SetupLoggingStdout(f.LogLevel, f.Log) // nolint: errcheck
 	flag.VisitAll(func(f *flag.Flag) {
 		slog.Info(f.Name, slog.String("value", f.Value.String()))
 	})
