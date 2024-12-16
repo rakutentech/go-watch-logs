@@ -22,7 +22,10 @@ var filePathsMutex sync.Mutex
 
 func main() {
 	flags()
-	pkg.SetupLoggingStdout(f.LogLevel)
+	pkg.SetupLoggingStdout(f.LogLevel, f.Log) // nolint: errcheck
+	flag.VisitAll(func(f *flag.Flag) {
+		slog.Info(f.Name, slog.String("value", f.Value.String()))
+	})
 	parseProxy()
 	wantsVersion()
 	validate()
@@ -157,7 +160,7 @@ func validate() {
 }
 
 func watch(filePath string) {
-	watcher, err := pkg.NewWatcher(f.DBPath, filePath, f.Match, f.Ignore)
+	watcher, err := pkg.NewWatcher(f.DBPath, filePath, f.Match, f.Ignore, f.Anomaly)
 	if err != nil {
 		slog.Error("Error creating watcher", "error", err.Error(), "filePath", filePath)
 		return
@@ -220,9 +223,10 @@ func notify(result *pkg.ScanResult) {
 }
 
 func flags() {
-	flag.StringVar(&f.FilePath, "file-path", "", "full path to the log file")
-	flag.StringVar(&f.FilePath, "f", "", "(short for --file-path) full path to the log file")
-	flag.StringVar(&f.DBPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file")
+	flag.StringVar(&f.FilePath, "file-path", "", "full path to the file to watch")
+	flag.StringVar(&f.FilePath, "f", "", "(short for --file-path) full path to the file to watch")
+	flag.StringVar(&f.Log, "log", "", "full path to output log file")
+	flag.StringVar(&f.DBPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file. Note dir must exist prior")
 	flag.StringVar(&f.Match, "match", "", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.Ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
 	flag.StringVar(&f.PostAlways, "post-always", "", "run this shell command after every scan")
@@ -233,6 +237,7 @@ func flags() {
 	flag.IntVar(&f.MemLimit, "mem-limit", 100, "memory limit in MB (0 to disable)")
 	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
+	flag.BoolVar(&f.Anomaly, "anomaly", false, "")
 	flag.BoolVar(&f.Version, "version", false, "")
 	flag.BoolVar(&f.Test, "test", false, `Quickly test paths or regex
 # will test if the input matches the regex

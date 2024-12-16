@@ -8,6 +8,7 @@ type Flags struct {
 	DBPath       string
 	PostAlways   string
 	PostMin      string
+	Log          string
 
 	Min              int
 	Every            uint64
@@ -16,6 +17,7 @@ type Flags struct {
 	LogLevel         int
 	MemLimit         int
 	MSTeamsHook      string
+	Anomaly          bool
 	Test             bool
 	Version          bool
 }

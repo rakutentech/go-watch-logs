@@ -20,6 +20,7 @@ type Watcher struct {
 	ignorePattern   string
 	lastLineNum     int
 	lastFileSize    int64
+	anomaly         bool
 }
 
 func NewWatcher(
@@ -27,6 +28,7 @@ func NewWatcher(
 	filePath string,
 	matchPattern string,
 	ignorePattern string,
+	anomaly bool,
 ) (*Watcher, error) {
 	dbName += ".sqlite"
 	db, err := InitDB(dbName)
@@ -38,6 +40,7 @@ func NewWatcher(
 		db:              db,
 		dbName:          dbName,
 		filePath:        filePath,
+		anomaly:         anomaly,
 		matchPattern:    matchPattern,
 		ignorePattern:   ignorePattern,
 		lastLineKey:     "llk-" + filePath,
