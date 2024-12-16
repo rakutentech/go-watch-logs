@@ -16,6 +16,9 @@ func InitDB(dbName string) (*sql.DB, error) {
 		slog.Error("Error opening database", "error", err.Error())
 		return nil, err
 	}
+	if db == nil {
+		slog.Info("Database is nil")
+	}
 
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS state (
