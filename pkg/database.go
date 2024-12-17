@@ -9,15 +9,28 @@ import (
 	_ "github.com/glebarez/go-sqlite" // nolint: revive
 )
 
+var (
+	db *sql.DB
+)
+
 func InitDB(dbName string) (*sql.DB, error) {
+	if db != nil {
+		// do a db ping to check if the connection is still alive
+		if err := db.Ping(); err == nil {
+			slog.Info("Reusing database connection", "dbName", dbName)
+			return db, nil
+		} else {
+			slog.Warn("Closing database connection", "error", err.Error())
+			db.Close()
+		}
+	}
+
 	slog.Info("Initializing database", "dbName", dbName)
-	db, err := sql.Open("sqlite", dbName)
+	var err error
+	db, err = sql.Open("sqlite", dbName)
 	if err != nil {
 		slog.Error("Error opening database", "error", err.Error())
 		return nil, err
-	}
-	if db == nil {
-		slog.Info("Database is nil")
 	}
 
 	_, err = db.Exec(`

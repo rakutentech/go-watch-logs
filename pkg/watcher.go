@@ -199,5 +199,6 @@ func (w *Watcher) saveState() error {
 }
 
 func (w *Watcher) Close() error {
-	return w.db.Close()
+	// return w.db.Close()
+	return nil
 }
