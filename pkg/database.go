@@ -15,7 +15,6 @@ var (
 
 func InitDB(dbName string) (*sql.DB, error) {
 	if db != nil {
-		// do a db ping to check if the connection is still alive
 		if err := db.Ping(); err == nil {
 			slog.Info("Reusing database connection", "dbName", dbName)
 			return db, nil
@@ -33,30 +32,13 @@ func InitDB(dbName string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS state (
-			key TEXT PRIMARY KEY,
-			value INTEGER
-		)
-	`)
-	if err != nil {
-		slog.Error("Error creating state table", "error", err.Error())
-		return nil, err
-	}
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS plot (
-			key TEXT PRIMARY KEY,
-			value INTEGER
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
-	if err != nil {
-		slog.Error("Error creating plot table", "error", err.Error())
-		return nil, err
-	}
 	db.SetMaxOpenConns(5)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(time.Hour)
+
+	if err := createTables(db); err != nil {
+		return nil, err
+	}
 
 	return db, nil
 }
@@ -66,5 +48,33 @@ func Vacuum(dbName string) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func createTables(db *sql.DB) error {
+	slog.Info("Creating tables if not exist")
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS state (
+			key TEXT PRIMARY KEY,
+			value INTEGER,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		slog.Error("Error creating state table", "error", err.Error())
+		return err
+	}
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS anomaly (
+			key TEXT PRIMARY KEY,
+			value INTEGER,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		slog.Error("Error creating plot table", "error", err.Error())
+		return err
+	}
+
 	return nil
 }

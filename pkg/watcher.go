@@ -14,6 +14,7 @@ type Watcher struct {
 	db              *sql.DB
 	dbName          string // full path
 	filePath        string
+	anomalyKey      string
 	lastLineKey     string
 	lastFileSizeKey string
 	matchPattern    string
@@ -43,6 +44,7 @@ func NewWatcher(
 		anomaly:         anomaly,
 		matchPattern:    matchPattern,
 		ignorePattern:   ignorePattern,
+		anomalyKey:      "anm-" + filePath,
 		lastLineKey:     "llk-" + filePath,
 		lastFileSizeKey: "llks-" + filePath,
 	}
@@ -64,6 +66,8 @@ type ScanResult struct {
 	LastLine     string
 	LastDate     string
 }
+
+var lines = []string{}
 
 func (w *Watcher) Scan() (*ScanResult, error) {
 	errorCounts := 0
@@ -108,6 +112,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	bytesRead := w.lastFileSize
 
 	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
 		line := scanner.Bytes()
 		bytesRead += int64(len(line)) + 1 // Adding 1 for the newline character
 		currentLineNum++
@@ -116,10 +121,24 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		if linesRead < 0 {
 			linesRead = -linesRead
 		}
-		slog.Debug("Scanning line", "line", string(line), "lineNum", currentLineNum, "linesRead", linesRead)
+		// slog.Debug("Scanning line", "line", string(line), "lineNum", currentLineNum, "linesRead", linesRead)
 		if w.ignorePattern != "" && ri.Match(line) {
 			continue
 		}
+
+		// anomaly insertion
+		if w.anomaly {
+			match := re.FindAllString(string(line), -1)
+			var exactMatch string
+			if len(match) >= 1 {
+				exactMatch = match[0]
+			}
+			if exactMatch != "" {
+				slog.Info("Match found", "line", string(line), "match", exactMatch)
+			}
+
+		}
+
 		if re.Match(line) {
 			lineStr := string(line)
 			if firstLine == "" {
