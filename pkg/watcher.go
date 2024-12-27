@@ -25,6 +25,7 @@ type Watcher struct {
 	anomalizer      *Anomalizer
 	anomaly         bool
 	anomalyWindow   int
+	timestampNow    string
 }
 
 func NewWatcher(
@@ -49,6 +50,7 @@ func NewWatcher(
 		anomalyKey:      "anm-" + filePath,
 		lastLineKey:     "llk-" + filePath,
 		lastFileSizeKey: "llks-" + filePath,
+		timestampNow:    time.Now().Format("2006-01-02 15:04:05"),
 	}
 	if err := watcher.loadState(); err != nil {
 		return nil, err
@@ -228,19 +230,17 @@ func (w *Watcher) loadState() error {
 }
 
 func (w *Watcher) saveState() error {
-	updatedAt := time.Now().Format("2006-01-02 15:04:05")
-	_, err := w.db.Exec(`REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)`, w.lastLineKey, w.lastLineNum, updatedAt)
+	_, err := w.db.Exec(`REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)`, w.lastLineKey, w.lastLineNum, w.timestampNow)
 	if err != nil {
 		return err
 	}
-	_, err = w.db.Exec(`REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)`, w.lastFileSizeKey, w.lastFileSize, updatedAt)
+	_, err = w.db.Exec(`REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)`, w.lastFileSizeKey, w.lastFileSize, w.timestampNow)
 	return err
 }
 
 func (w *Watcher) SaveAnomalies() error {
-	createdAt := time.Now().Format("2006-01-02 15:04:05")
 	for match, value := range w.anomalizer.counter {
-		_, err := w.db.Exec(`INSERT INTO anomalies (key, match, value, created_at) VALUES (?, ?, ?, ?)`, w.anomalyKey, match, value, createdAt)
+		_, err := w.db.Exec(`INSERT INTO anomalies (key, match, value, created_at) VALUES (?, ?, ?, ?)`, w.anomalyKey, match, value, w.timestampNow)
 		if err != nil {
 			return err
 		}
@@ -249,8 +249,12 @@ func (w *Watcher) SaveAnomalies() error {
 }
 
 func (w *Watcher) DeleteOldAnomalies() error {
-	windowAt := time.Now().AddDate(0, 0, -w.anomalyWindow).Format("2006-01-02 15:04:05")
-	_, err := w.db.Exec(`DELETE FROM anomalies WHERE key = ? AND created_at < ?`, w.anomalyKey, windowAt)
+	now, err := time.Parse("2006-01-02 15:04:05", w.timestampNow)
+	if err != nil {
+		return err
+	}
+	windowAt := now.AddDate(0, 0, -w.anomalyWindow).Format("2006-01-02 15:04:05")
+	_, err = w.db.Exec(`DELETE FROM anomalies WHERE key = ? AND created_at < ?`, w.anomalyKey, windowAt)
 	return err
 }
 
