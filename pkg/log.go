@@ -23,7 +23,7 @@ func SetupLoggingStdout(logLevel int, logFile string) error {
 	}
 	slog.SetDefault(slog.New(slogcolor.NewHandler(&lumberjack.Logger{
 		Filename:   logFile,
-		MaxSize:    1, // megabytes
+		MaxSize:    10, // megabytes
 		MaxBackups: 3,
 		MaxAge:     3, // days
 		LocalTime:  true,

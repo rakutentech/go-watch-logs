@@ -8,6 +8,8 @@ THIS_PROJECT_NAME='go-watch-logs'
 THISOS=$(uname -s)
 ARCH=$(uname -m)
 
+INSTALL_VERSION=${1:-latest}
+
 case $THISOS in
    Linux*)
       case $ARCH in
@@ -49,7 +51,12 @@ if [ -z "$THE_ARCH_BIN" ]; then
    exit 1
 fi
 
-curl -kL --progress-bar https://github.com/rakutentech/$THIS_PROJECT_NAME/releases/latest/download/$THE_ARCH_BIN -o "$BIN_DIR"/$THIS_PROJECT_NAME
+DOWNLOAD_URL="https://github.com/rakutentech/$THIS_PROJECT_NAME/releases/download/$INSTALL_VERSION/$THE_ARCH_BIN"
+if [ "$INSTALL_VERSION" = "latest" ]; then
+  DOWNLOAD_URL="https://github.com/kevincobain2000/$THIS_PROJECT_NAME/releases/$INSTALL_VERSION/download/$THE_ARCH_BIN"
+fi
+
+curl -kL --progress-bar "$DOWNLOAD_URL" -o "$BIN_DIR"/$THIS_PROJECT_NAME
 
 chmod +x "$BIN_DIR"/$THIS_PROJECT_NAME
 

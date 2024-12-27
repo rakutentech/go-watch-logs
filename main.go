@@ -174,9 +174,9 @@ func watch(filePath string) {
 		slog.Error("Error scanning file", "error", err.Error(), "filePath", filePath)
 		return
 	}
-	slog.Info("1st line", "date", result.FirstDate, "line", pkg.Truncate(result.FirstLine, pkg.TruncateMax))
-	slog.Info("Preview line", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
-	slog.Info("Last line", "date", result.LastDate, "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
+	slog.Info("1st line (truncated to 200 chars)", "date", result.FirstDate, "line", pkg.Truncate(result.FirstLine, pkg.TruncateMax))
+	slog.Info("Preview line (truncated to 200 chars)", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
+	slog.Info("Last line (truncated to 200 chars)", "date", result.LastDate, "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
 	slog.Info("Error count", "percent", fmt.Sprintf("%d (%.2f)", result.ErrorCount, result.ErrorPercent)+"%")
 
 	slog.Info("Lines read", "count", result.LinesRead)
@@ -189,7 +189,13 @@ func watch(filePath string) {
 	if result.ErrorCount < f.Min {
 		return
 	}
-	notify(result)
+	if !f.NotifyOnlyRecent {
+		notify(result)
+	}
+
+	if f.NotifyOnlyRecent && pkg.IsRecentlyModified(result.FileInfo, f.Every) {
+		notify(result)
+	}
 	if f.PostMin != "" {
 		if _, err := pkg.ExecShell(f.PostMin); err != nil {
 			slog.Error("Error running post command", "error", err.Error())
@@ -238,6 +244,7 @@ func flags() {
 	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
 	flag.BoolVar(&f.Anomaly, "anomaly", false, "")
+	flag.BoolVar(&f.NotifyOnlyRecent, "notify-only-recent", true, "Notify on latest file only by timestamp based on --every")
 	flag.BoolVar(&f.Version, "version", false, "")
 	flag.BoolVar(&f.Test, "test", false, `Quickly test paths or regex
 # will test if the input matches the regex

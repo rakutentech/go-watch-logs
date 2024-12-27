@@ -3,6 +3,7 @@ package pkg
 import (
 	"os"
 	"path/filepath"
+	"time"
 	"unicode/utf8"
 )
 
@@ -65,4 +66,11 @@ func GetHomedir() string {
 		return ""
 	}
 	return home
+}
+
+func IsRecentlyModified(fileInfo os.FileInfo, within uint64) bool {
+	modTime := fileInfo.ModTime().Unix()
+	currentTime := time.Now().Unix()
+	bufferMins := int64(within) * 60
+	return currentTime-modTime < bufferMins
 }

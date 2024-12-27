@@ -18,6 +18,7 @@ type Flags struct {
 	MemLimit         int
 	MSTeamsHook      string
 	Anomaly          bool
+	NotifyOnlyRecent bool
 	Test             bool
 	Version          bool
 }

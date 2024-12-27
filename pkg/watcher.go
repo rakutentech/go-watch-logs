@@ -57,6 +57,7 @@ func NewWatcher(
 
 type ScanResult struct {
 	FilePath     string
+	FileInfo     os.FileInfo
 	ErrorCount   int
 	ErrorPercent float64
 	LinesRead    int
@@ -97,11 +98,11 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		return nil, err
 	}
 
-	re, err := regexp.Compile(w.matchPattern)
+	regMatch, err := regexp.Compile(w.matchPattern)
 	if err != nil {
 		return nil, err
 	}
-	ri, err := regexp.Compile(w.ignorePattern)
+	regIgnore, err := regexp.Compile(w.ignorePattern)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +111,8 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	currentLineNum := 1
 	linesRead := 0
 	bytesRead := w.lastFileSize
+
+	counter := make(map[string]int)
 
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
@@ -122,24 +125,26 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 			linesRead = -linesRead
 		}
 		// slog.Debug("Scanning line", "line", string(line), "lineNum", currentLineNum, "linesRead", linesRead)
-		if w.ignorePattern != "" && ri.Match(line) {
+		if w.ignorePattern != "" && regIgnore.Match(line) {
 			continue
 		}
 
 		// anomaly insertion
 		if w.anomaly {
-			match := re.FindAllString(string(line), -1)
+			match := regMatch.FindAllString(string(line), -1)
 			var exactMatch string
 			if len(match) >= 1 {
 				exactMatch = match[0]
 			}
 			if exactMatch != "" {
 				slog.Info("Match found", "line", string(line), "match", exactMatch)
+				counter[exactMatch]++
 			}
+			// pp.Println(counter)
 
 		}
 
-		if re.Match(line) {
+		if regMatch.Match(line) {
 			lineStr := string(line)
 			if firstLine == "" {
 				firstLine = lineStr
@@ -184,6 +189,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		LastLine:     lastLine,
 		LastDate:     SearchDate(lastLine),
 		FilePath:     w.filePath,
+		FileInfo:     fileInfo,
 		ErrorPercent: matchPercentage,
 		LinesRead:    linesRead,
 	}, nil
