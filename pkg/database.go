@@ -15,13 +15,13 @@ var (
 
 func InitDB(dbName string) (*sql.DB, error) {
 	if db != nil {
-		if err := db.Ping(); err == nil {
+		err := db.Ping()
+		if err == nil {
 			slog.Info("Reusing database connection", "dbName", dbName)
 			return db, nil
-		} else {
-			slog.Warn("Closing database connection", "error", err.Error())
-			db.Close()
 		}
+		slog.Warn("Closing database connection", "error", err.Error())
+		db.Close()
 	}
 
 	slog.Info("Initializing database", "dbName", dbName)

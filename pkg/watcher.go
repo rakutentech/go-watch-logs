@@ -21,6 +21,7 @@ type Watcher struct {
 	ignorePattern   string
 	lastLineNum     int
 	lastFileSize    int64
+	anomalizer      *Anomalizer
 	anomaly         bool
 }
 
@@ -42,6 +43,7 @@ func NewWatcher(
 		dbName:          dbName,
 		filePath:        filePath,
 		anomaly:         anomaly,
+		anomalizer:      NewAnomalizer(),
 		matchPattern:    matchPattern,
 		ignorePattern:   ignorePattern,
 		anomalyKey:      "anm-" + filePath,
@@ -112,8 +114,6 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	linesRead := 0
 	bytesRead := w.lastFileSize
 
-	counter := make(map[string]int)
-
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 		line := scanner.Bytes()
@@ -138,10 +138,8 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 			}
 			if exactMatch != "" {
 				slog.Info("Match found", "line", string(line), "match", exactMatch)
-				counter[exactMatch]++
+				w.anomalizer.MemSafeCount(exactMatch)
 			}
-			// pp.Println(counter)
-
 		}
 
 		if regMatch.Match(line) {

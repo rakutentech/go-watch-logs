@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"math"
 	"os"
 	"path/filepath"
 	"time"
@@ -69,8 +70,24 @@ func GetHomedir() string {
 }
 
 func IsRecentlyModified(fileInfo os.FileInfo, within uint64) bool {
-	modTime := fileInfo.ModTime().Unix()
-	currentTime := time.Now().Unix()
-	bufferMins := int64(within) * 60
-	return currentTime-modTime < bufferMins
+	// Get the current time
+	now := time.Now()
+
+	// Get the file's modification time
+	modTime := fileInfo.ModTime()
+
+	// Add a 1-hour buffer (3600 seconds) to the "within" duration
+	adjustedWithin := within + 3600
+
+	// Ensure that adjustedWithin is within the bounds of int64
+	if adjustedWithin > math.MaxInt64 {
+		// If the value exceeds the max int64 value, return false as it would cause overflow
+		return false
+	}
+
+	// Calculate the time difference
+	diff := now.Sub(modTime)
+
+	// Check if the difference is within the adjusted duration
+	return diff <= time.Duration(adjustedWithin)*time.Second
 }
