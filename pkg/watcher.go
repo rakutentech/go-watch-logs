@@ -8,6 +8,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type Watcher struct {
@@ -23,16 +24,14 @@ type Watcher struct {
 	lastFileSize    int64
 	anomalizer      *Anomalizer
 	anomaly         bool
+	anomalyWindow   int
 }
 
 func NewWatcher(
-	dbName string,
 	filePath string,
-	matchPattern string,
-	ignorePattern string,
-	anomaly bool,
+	f Flags,
 ) (*Watcher, error) {
-	dbName += ".sqlite"
+	dbName := f.DBPath + ".sqlite"
 	db, err := InitDB(dbName)
 	if err != nil {
 		return nil, err
@@ -42,10 +41,11 @@ func NewWatcher(
 		db:              db,
 		dbName:          dbName,
 		filePath:        filePath,
-		anomaly:         anomaly,
+		anomaly:         f.Anomaly,
 		anomalizer:      NewAnomalizer(),
-		matchPattern:    matchPattern,
-		ignorePattern:   ignorePattern,
+		anomalyWindow:   f.AnomalyWindowDays,
+		matchPattern:    f.Match,
+		ignorePattern:   f.Ignore,
 		anomalyKey:      "anm-" + filePath,
 		lastLineKey:     "llk-" + filePath,
 		lastFileSizeKey: "llks-" + filePath,
@@ -140,6 +140,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 				slog.Info("Match found", "line", string(line), "match", exactMatch)
 				w.anomalizer.MemSafeCount(exactMatch)
 			}
+			continue // no need to go for match as this is anomaly check only
 		}
 
 		if regMatch.Match(line) {
@@ -152,6 +153,16 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 			}
 			lastLine = lineStr
 			errorCounts++
+		}
+	}
+	if w.anomaly {
+		slog.Info("Saving anomalies")
+		if err := w.SaveAnomalies(); err != nil {
+			return nil, err
+		}
+		slog.Info("Deleting old anomalies")
+		if err := w.DeleteOldAnomalies(); err != nil {
+			return nil, err
 		}
 	}
 
@@ -173,7 +184,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	w.lastFileSize = bytesRead
 	if err := w.saveState(); err != nil {
 		if strings.HasPrefix(err.Error(), "database is locked") {
-			if err := Vacuum(w.dbName); err != nil {
+			if err := DeleteDB(w.dbName); err != nil {
 				return nil, err
 			}
 		}
@@ -213,11 +224,29 @@ func (w *Watcher) loadState() error {
 }
 
 func (w *Watcher) saveState() error {
-	_, err := w.db.Exec(`REPLACE INTO state (key, value) VALUES (?, ?)`, w.lastLineKey, w.lastLineNum)
+	updatedAt := time.Now().Format("2006-01-02 15:04:05")
+	_, err := w.db.Exec(`REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)`, w.lastLineKey, w.lastLineNum, updatedAt)
 	if err != nil {
 		return err
 	}
-	_, err = w.db.Exec(`REPLACE INTO state (key, value) VALUES (?, ?)`, w.lastFileSizeKey, w.lastFileSize)
+	_, err = w.db.Exec(`REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)`, w.lastFileSizeKey, w.lastFileSize, updatedAt)
+	return err
+}
+
+func (w *Watcher) SaveAnomalies() error {
+	createdAt := time.Now().Format("2006-01-02 15:04:05")
+	for match, value := range w.anomalizer.counter {
+		_, err := w.db.Exec(`INSERT INTO anomalies (key, match, value, created_at) VALUES (?, ?, ?, ?)`, w.anomalyKey, match, value, createdAt)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (w *Watcher) DeleteOldAnomalies() error {
+	windowAt := time.Now().AddDate(0, 0, -w.anomalyWindow).Format("2006-01-02 15:04:05")
+	_, err := w.db.Exec(`DELETE FROM anomalies WHERE key = ? AND created_at < ?`, w.anomalyKey, windowAt)
 	return err
 }
 

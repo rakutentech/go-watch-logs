@@ -7,10 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	inMemory = "testdb"
-)
-
 func setupTempFile(content string) (string, error) {
 	tmpfile, err := os.CreateTemp("", "test.log")
 	if err != nil {
@@ -26,12 +22,19 @@ func setupTempFile(content string) (string, error) {
 }
 
 func TestNewWatcher(t *testing.T) {
-	dbName := inMemory
 	filePath := "test.log"    // nolint: goconst
 	matchPattern := "error:1" // nolint: goconst
 	ignorePattern := "ignore" // nolint: goconst
 
-	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
+	f := Flags{
+		DBPath:            "test",
+		Anomaly:           false,
+		AnomalyWindowDays: 1,
+		Match:             matchPattern,
+		Ignore:            ignorePattern,
+	}
+
+	watcher, err := NewWatcher(filePath, f)
 	assert.NoError(t, err)
 	assert.NotNil(t, watcher)
 
@@ -48,11 +51,18 @@ error:1`
 	assert.NoError(t, err)
 	defer os.Remove(filePath)
 
-	dbName := inMemory
 	matchPattern := `error:1` // nolint: goconst
 	ignorePattern := `ignore` // nolint: goconst
 
-	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
+	f := Flags{
+		DBPath:            "test",
+		Anomaly:           false,
+		AnomalyWindowDays: 1,
+		Match:             matchPattern,
+		Ignore:            ignorePattern,
+	}
+
+	watcher, err := NewWatcher(filePath, f)
 	assert.NoError(t, err)
 	defer watcher.Close()
 
@@ -71,11 +81,18 @@ line2`
 	assert.NoError(t, err)
 	defer os.Remove(filePath)
 
-	dbName := inMemory
 	matchPattern := `error:1` // nolint: goconst
 	ignorePattern := `ignore` // nolint: goconst
 
-	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
+	f := Flags{
+		DBPath:            "test",
+		Anomaly:           false,
+		AnomalyWindowDays: 1,
+		Match:             matchPattern,
+		Ignore:            ignorePattern,
+	}
+
+	watcher, err := NewWatcher(filePath, f)
 	assert.NoError(t, err)
 	defer watcher.Close()
 
@@ -108,11 +125,18 @@ error:1`
 	}
 	defer os.Remove(filePath)
 
-	dbName := inMemory
 	matchPattern := `error:1`
 	ignorePattern := `ignore`
 
-	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
+	f := Flags{
+		DBPath:            "test",
+		Anomaly:           false,
+		AnomalyWindowDays: 1,
+		Match:             matchPattern,
+		Ignore:            ignorePattern,
+	}
+
+	watcher, err := NewWatcher(filePath, f)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -132,7 +156,15 @@ func BenchmarkLoadAndSaveState(b *testing.B) {
 	matchPattern := "error:1"
 	ignorePattern := "ignore"
 
-	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
+	f := Flags{
+		DBPath:            dbName,
+		Anomaly:           false,
+		AnomalyWindowDays: 1,
+		Match:             matchPattern,
+		Ignore:            ignorePattern,
+	}
+
+	watcher, err := NewWatcher(filePath, f)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -141,7 +173,7 @@ func BenchmarkLoadAndSaveState(b *testing.B) {
 	watcher.lastLineNum = 10
 
 	for i := 0; i < b.N; i++ {
-		_, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
+		_, err := NewWatcher(filePath, f)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -158,11 +190,18 @@ line2`
 	}
 	defer os.Remove(filePath)
 
-	dbName := inMemory
 	matchPattern := `error:1`
 	ignorePattern := `ignore`
 
-	watcher, err := NewWatcher(dbName, filePath, matchPattern, ignorePattern, false)
+	f := Flags{
+		DBPath:            "test",
+		Anomaly:           false,
+		AnomalyWindowDays: 1,
+		Match:             matchPattern,
+		Ignore:            ignorePattern,
+	}
+
+	watcher, err := NewWatcher(filePath, f)
 	if err != nil {
 		b.Fatal(err)
 	}

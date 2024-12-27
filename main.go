@@ -22,7 +22,7 @@ var filePathsMutex sync.Mutex
 
 func main() {
 	flags()
-	pkg.SetupLoggingStdout(f.LogLevel, f.Log) // nolint: errcheck
+	pkg.SetupLoggingStdout(f.LogLevel, f.LogFile) // nolint: errcheck
 	flag.VisitAll(func(f *flag.Flag) {
 		slog.Info(f.Name, slog.String("value", f.Value.String()))
 	})
@@ -160,7 +160,8 @@ func validate() {
 }
 
 func watch(filePath string) {
-	watcher, err := pkg.NewWatcher(f.DBPath, filePath, f.Match, f.Ignore, f.Anomaly)
+	watcher, err := pkg.NewWatcher(filePath, f)
+
 	if err != nil {
 		slog.Error("Error creating watcher", "error", err.Error(), "filePath", filePath)
 		return
@@ -174,31 +175,35 @@ func watch(filePath string) {
 		slog.Error("Error scanning file", "error", err.Error(), "filePath", filePath)
 		return
 	}
-	slog.Info("1st line (truncated to 200 chars)", "date", result.FirstDate, "line", pkg.Truncate(result.FirstLine, pkg.TruncateMax))
-	slog.Info("Preview line (truncated to 200 chars)", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
-	slog.Info("Last line (truncated to 200 chars)", "date", result.LastDate, "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
-	slog.Info("Error count", "percent", fmt.Sprintf("%d (%.2f)", result.ErrorCount, result.ErrorPercent)+"%")
-
 	slog.Info("Lines read", "count", result.LinesRead)
-
 	slog.Info("Scanning complete", "filePath", result.FilePath)
-
-	if result.ErrorCount < 0 {
-		return
-	}
-	if result.ErrorCount < f.Min {
-		return
-	}
-	if !f.NotifyOnlyRecent {
-		notify(result)
+	if f.Anomaly {
+		slog.Info("Anomaly detection started", "filePath", result.FilePath)
 	}
 
-	if f.NotifyOnlyRecent && pkg.IsRecentlyModified(result.FileInfo, f.Every) {
-		notify(result)
-	}
-	if f.PostMin != "" {
-		if _, err := pkg.ExecShell(f.PostMin); err != nil {
-			slog.Error("Error running post command", "error", err.Error())
+	if !f.Anomaly {
+		slog.Info("1st line (truncated to 200 chars)", "date", result.FirstDate, "line", pkg.Truncate(result.FirstLine, pkg.TruncateMax))
+		slog.Info("Preview line (truncated to 200 chars)", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
+		slog.Info("Last line (truncated to 200 chars)", "date", result.LastDate, "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
+		slog.Info("Error count", "percent", fmt.Sprintf("%d (%.2f)", result.ErrorCount, result.ErrorPercent)+"%")
+
+		if result.ErrorCount < 0 {
+			return
+		}
+		if result.ErrorCount < f.Min {
+			return
+		}
+		if !f.NotifyOnlyRecent {
+			notify(result)
+		}
+
+		if f.NotifyOnlyRecent && pkg.IsRecentlyModified(result.FileInfo, f.Every) {
+			notify(result)
+		}
+		if f.PostCommand != "" {
+			if _, err := pkg.ExecShell(f.PostCommand); err != nil {
+				slog.Error("Error running post command", "error", err.Error())
+			}
 		}
 	}
 }
@@ -231,12 +236,12 @@ func notify(result *pkg.ScanResult) {
 func flags() {
 	flag.StringVar(&f.FilePath, "file-path", "", "full path to the file to watch")
 	flag.StringVar(&f.FilePath, "f", "", "(short for --file-path) full path to the file to watch")
-	flag.StringVar(&f.Log, "log", "", "full path to output log file")
+	flag.StringVar(&f.LogFile, "log-file", "", "full path to output log file")
 	flag.StringVar(&f.DBPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file. Note dir must exist prior")
 	flag.StringVar(&f.Match, "match", "", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.Ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
 	flag.StringVar(&f.PostAlways, "post-always", "", "run this shell command after every scan")
-	flag.StringVar(&f.PostMin, "post-min", "", "run this shell command after every scan when min errors are found")
+	flag.StringVar(&f.PostCommand, "post-cmd", "", "run this shell command after every scan when min errors are found")
 	flag.Uint64Var(&f.Every, "every", 0, "run every n seconds (0 to run once)")
 	flag.Uint64Var(&f.HealthCheckEvery, "health-check-every", 0, "run health check every n seconds (0 to disable)")
 	flag.IntVar(&f.LogLevel, "log-level", 0, "log level (0=info, -4=debug, 4=warn, 8=error)")
@@ -244,6 +249,7 @@ func flags() {
 	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
 	flag.BoolVar(&f.Anomaly, "anomaly", false, "")
+	flag.IntVar(&f.AnomalyWindowDays, "anomaly-window-days", 7, "anomaly window days")
 	flag.BoolVar(&f.NotifyOnlyRecent, "notify-only-recent", true, "Notify on latest file only by timestamp based on --every")
 	flag.BoolVar(&f.Version, "version", false, "")
 	flag.BoolVar(&f.Test, "test", false, `Quickly test paths or regex
