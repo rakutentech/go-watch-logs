@@ -21,7 +21,7 @@ var filePaths []string
 var filePathsMutex sync.Mutex
 
 func main() {
-	flags()
+	pkg.Parseflags(&f)
 	pkg.SetupLoggingStdout(f.LogLevel, f.LogFile) // nolint: errcheck
 	flag.VisitAll(func(f *flag.Flag) {
 		slog.Info(f.Name, slog.String("value", f.Value.String()))
@@ -194,11 +194,11 @@ func watch(filePath string) {
 			return
 		}
 		if !f.NotifyOnlyRecent {
-			notify(result)
+			pkg.Notify(result, f, version)
 		}
 
 		if f.NotifyOnlyRecent && pkg.IsRecentlyModified(result.FileInfo, f.Every) {
-			notify(result)
+			pkg.Notify(result, f, version)
 		}
 		if f.PostCommand != "" {
 			if _, err := pkg.ExecShell(f.PostCommand); err != nil {
@@ -206,63 +206,6 @@ func watch(filePath string) {
 			}
 		}
 	}
-}
-
-func notify(result *pkg.ScanResult) {
-	slog.Info("Sending to MS Teams")
-	details := pkg.GetAlertDetails(&f, version, result)
-
-	var logDetails []interface{} // nolint: prealloc
-	for _, detail := range details {
-		logDetails = append(logDetails, detail.Label, detail.Message)
-	}
-
-	if f.MSTeamsHook == "" {
-		slog.Warn("MS Teams hook not set")
-		return
-	}
-	slog.Info("Sending Alert Notify", logDetails...)
-
-	hostname, _ := os.Hostname()
-
-	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
-	if err != nil {
-		slog.Error("Error sending to Teams", "error", err.Error())
-	} else {
-		slog.Info("Successfully sent to MS Teams")
-	}
-}
-
-func flags() {
-	flag.StringVar(&f.FilePath, "file-path", "", "full path to the file to watch")
-	flag.StringVar(&f.FilePath, "f", "", "(short for --file-path) full path to the file to watch")
-	flag.StringVar(&f.LogFile, "log-file", "", "full path to output log file")
-	flag.StringVar(&f.DBPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file. Note dir must exist prior")
-	flag.StringVar(&f.Match, "match", "", "regex for matching errors (empty to match all lines)")
-	flag.StringVar(&f.Ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
-	flag.StringVar(&f.PostAlways, "post-always", "", "run this shell command after every scan")
-	flag.StringVar(&f.PostCommand, "post-cmd", "", "run this shell command after every scan when min errors are found")
-	flag.Uint64Var(&f.Every, "every", 0, "run every n seconds (0 to run once)")
-	flag.Uint64Var(&f.HealthCheckEvery, "health-check-every", 0, "run health check every n seconds (0 to disable)")
-	flag.IntVar(&f.LogLevel, "log-level", 0, "log level (0=info, -4=debug, 4=warn, 8=error)")
-	flag.IntVar(&f.MemLimit, "mem-limit", 100, "memory limit in MB (0 to disable)")
-	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
-	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
-	flag.BoolVar(&f.Anomaly, "anomaly", false, "")
-	flag.IntVar(&f.AnomalyWindowDays, "anomaly-window-days", 7, "anomaly window days")
-	flag.BoolVar(&f.NotifyOnlyRecent, "notify-only-recent", true, "Notify on latest file only by timestamp based on --every")
-	flag.BoolVar(&f.Version, "version", false, "")
-	flag.BoolVar(&f.Test, "test", false, `Quickly test paths or regex
-# will test if the input matches the regex
-echo test123 | go-watch-logs --match=123 --test
-# will test if the file paths are found and list them
-go-watch-logs --file-path=./ssl_access.*log --test
-	`)
-
-	flag.StringVar(&f.Proxy, "proxy", "", "http proxy for webhooks")
-	flag.StringVar(&f.MSTeamsHook, "ms-teams-hook", "", "ms teams webhook")
-
-	flag.Parse()
 }
 
 func parseProxy() string {

@@ -124,13 +124,18 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		if linesRead < 0 {
 			linesRead = -linesRead
 		}
-		// slog.Debug("Scanning line", "line", string(line), "lineNum", currentLineNum, "linesRead", linesRead)
+
 		if w.ignorePattern != "" && regIgnore.Match(line) {
 			continue
 		}
 
 		// anomaly insertion
 		if w.anomaly {
+			if w.matchPattern == "" {
+				slog.Info("Match entire line, incrementing +1 match as empty")
+				w.anomalizer.MemSafeCount("")
+				continue
+			}
 			match := regMatch.FindAllString(string(line), -1)
 			var exactMatch string
 			if len(match) >= 1 {
@@ -140,10 +145,9 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 				slog.Info("Match found", "line", string(line), "match", exactMatch)
 				w.anomalizer.MemSafeCount(exactMatch)
 			}
-			continue // no need to go for match as this is anomaly check only
 		}
 
-		if regMatch.Match(line) {
+		if !w.anomaly && regMatch.Match(line) {
 			lineStr := string(line)
 			if firstLine == "" {
 				firstLine = lineStr

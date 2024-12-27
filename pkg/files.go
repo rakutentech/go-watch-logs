@@ -91,3 +91,17 @@ func IsRecentlyModified(fileInfo os.FileInfo, within uint64) bool {
 	// Check if the difference is within the adjusted duration
 	return diff <= time.Duration(adjustedWithin)*time.Second
 }
+
+func EnsureDirectoryExists(filePath string) error {
+	// Extract the directory from the file path
+	dir := filepath.Dir(filePath)
+
+	// Check if the directory exists
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		// Create the directory if it does not exist
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			return err
+		}
+	}
+	return nil
+}

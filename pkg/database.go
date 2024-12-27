@@ -38,11 +38,6 @@ func InitDB(dbName string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	if err := vaccumIfOver(db, dbName, 100); err != nil {
-		slog.Error("Error vacuuming database", "error", err.Error())
-		return nil, err
-	}
-
 	db.SetMaxOpenConns(5)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(time.Hour)
