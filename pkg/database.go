@@ -106,7 +106,8 @@ func createTables(db *sql.DB) error {
 			key TEXT KEY,
 			match TEXT,
 			value INTEGER,
-			created_at DATETIME
+			date DATE,
+			time TIME
 		)
 	`)
 	if err != nil {

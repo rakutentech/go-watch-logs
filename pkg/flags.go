@@ -67,13 +67,13 @@ go-watch-logs --file-path=./ssl_access.*log --test
 
 func ParsePostFlags(f *Flags) {
 	if f.LogFile != "" {
-		if err := EnsureDirectoryExists(f.LogFile); err != nil {
+		if err := MkdirP(f.LogFile); err != nil {
 			panic("Failed to ensure directory for log file: " + err.Error())
 		}
 	}
 
 	if f.DBPath != "" {
-		if err := EnsureDirectoryExists(f.DBPath); err != nil {
+		if err := MkdirP(f.DBPath); err != nil {
 			panic("Failed to ensure directory for DB path: " + err.Error())
 		}
 	}

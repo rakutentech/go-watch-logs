@@ -26,6 +26,13 @@ func Truncate(s string, n int) string {
 	return s[:n] + "..."
 }
 
+func LimitString(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
+}
+
 var (
 	tg   *timegrinder.TimeGrinder
 	once sync.Once

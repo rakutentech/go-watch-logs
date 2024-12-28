@@ -12,20 +12,20 @@ import (
 )
 
 type Watcher struct {
-	db              *sql.DB
-	dbName          string // full path
-	filePath        string
-	anomalyKey      string
-	lastLineKey     string
-	lastFileSizeKey string
-	matchPattern    string
-	ignorePattern   string
-	lastLineNum     int
-	lastFileSize    int64
-	anomalizer      *Anomalizer
-	anomaly         bool
-	anomalyWindow   int
-	timestampNow    string
+	db                *sql.DB
+	dbName            string // full path
+	filePath          string
+	anomalyKey        string
+	lastLineKey       string
+	lastFileSizeKey   string
+	matchPattern      string
+	ignorePattern     string
+	lastLineNum       int
+	lastFileSize      int64
+	anomalizer        *Anomalizer
+	anomaly           bool
+	anomalyWindowDays int
+	timestampNow      string
 }
 
 func NewWatcher(
@@ -37,21 +37,23 @@ func NewWatcher(
 	if err != nil {
 		return nil, err
 	}
+	now := time.Now()
 
 	watcher := &Watcher{
-		db:              db,
-		dbName:          dbName,
-		filePath:        filePath,
-		anomaly:         f.Anomaly,
-		anomalizer:      NewAnomalizer(),
-		anomalyWindow:   f.AnomalyWindowDays,
-		matchPattern:    f.Match,
-		ignorePattern:   f.Ignore,
-		anomalyKey:      "anm-" + filePath,
-		lastLineKey:     "llk-" + filePath,
-		lastFileSizeKey: "llks-" + filePath,
-		timestampNow:    time.Now().Format("2006-01-02 15:04:05"),
+		db:                db,
+		dbName:            dbName,
+		filePath:          filePath,
+		anomaly:           f.Anomaly,
+		anomalizer:        nil,
+		anomalyWindowDays: f.AnomalyWindowDays,
+		matchPattern:      f.Match,
+		ignorePattern:     f.Ignore,
+		anomalyKey:        "anm-" + filePath,
+		lastLineKey:       "llk-" + filePath,
+		lastFileSizeKey:   "llks-" + filePath,
+		timestampNow:      now.Format("2006-01-02 15:04:05"),
 	}
+	watcher.anomalizer = NewAnomalizer(db, f, now, watcher.anomalyKey, f.AnomalyWindowDays)
 	if err := watcher.loadState(); err != nil {
 		return nil, err
 	}
@@ -75,7 +77,7 @@ type ScanResult struct {
 var lines = []string{}
 
 func (w *Watcher) Scan() (*ScanResult, error) {
-	errorCounts := 0
+	matchCounts := 0
 	firstLine := ""
 	lastLine := ""
 	previewLine := ""
@@ -145,7 +147,10 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 			}
 			if exactMatch != "" {
 				slog.Info("Match found", "line", string(line), "match", exactMatch)
-				w.anomalizer.MemSafeCount(exactMatch)
+				if len(exactMatch) > 100 {
+					slog.Warn("Match too long, this impacts DB size, limiting to 100", "match", exactMatch)
+				}
+				w.anomalizer.MemSafeCount(LimitString(exactMatch, 100))
 			}
 		}
 
@@ -158,16 +163,16 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 				previewLine += lineStr + "\n"
 			}
 			lastLine = lineStr
-			errorCounts++
+			matchCounts++
 		}
 	}
 	if w.anomaly {
 		slog.Info("Saving anomalies")
-		if err := w.SaveAnomalies(); err != nil {
+		if err := w.anomalizer.SaveAnomalies(); err != nil {
 			return nil, err
 		}
 		slog.Info("Deleting old anomalies")
-		if err := w.DeleteOldAnomalies(); err != nil {
+		if err := w.anomalizer.DeleteOldAnomalies(); err != nil {
 			return nil, err
 		}
 	}
@@ -178,7 +183,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 
 	matchPercentage := 0.0
 	if linesRead > 0 {
-		matchPercentage = float64(errorCounts) * 100 / float64(linesRead)
+		matchPercentage = float64(matchCounts) * 100 / float64(linesRead)
 		if matchPercentage > 100 {
 			matchPercentage = 100
 		}
@@ -197,12 +202,12 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		return nil, err
 	}
 	return &ScanResult{
-		ErrorCount:   errorCounts,
-		FirstLine:    firstLine,
+		ErrorCount:   matchCounts,
 		FirstDate:    SearchDate(firstLine),
+		LastDate:     SearchDate(lastLine),
+		FirstLine:    firstLine,
 		PreviewLine:  previewLine,
 		LastLine:     lastLine,
-		LastDate:     SearchDate(lastLine),
 		FilePath:     w.filePath,
 		FileInfo:     fileInfo,
 		ErrorPercent: matchPercentage,
@@ -235,26 +240,6 @@ func (w *Watcher) saveState() error {
 		return err
 	}
 	_, err = w.db.Exec(`REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)`, w.lastFileSizeKey, w.lastFileSize, w.timestampNow)
-	return err
-}
-
-func (w *Watcher) SaveAnomalies() error {
-	for match, value := range w.anomalizer.counter {
-		_, err := w.db.Exec(`INSERT INTO anomalies (key, match, value, created_at) VALUES (?, ?, ?, ?)`, w.anomalyKey, match, value, w.timestampNow)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (w *Watcher) DeleteOldAnomalies() error {
-	now, err := time.Parse("2006-01-02 15:04:05", w.timestampNow)
-	if err != nil {
-		return err
-	}
-	windowAt := now.AddDate(0, 0, -w.anomalyWindow).Format("2006-01-02 15:04:05")
-	_, err = w.db.Exec(`DELETE FROM anomalies WHERE key = ? AND created_at < ?`, w.anomalyKey, windowAt)
 	return err
 }
 

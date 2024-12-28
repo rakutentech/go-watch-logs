@@ -92,7 +92,7 @@ func IsRecentlyModified(fileInfo os.FileInfo, within uint64) bool {
 	return diff <= time.Duration(adjustedWithin)*time.Second
 }
 
-func EnsureDirectoryExists(filePath string) error {
+func MkdirP(filePath string) error {
 	// Extract the directory from the file path
 	dir := filepath.Dir(filePath)
 
