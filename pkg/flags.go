@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"flag"
+	"log/slog"
+	"os"
 )
 
 type Flags struct {
@@ -23,6 +25,7 @@ type Flags struct {
 	MSTeamsHook       string
 	Anomaly           bool
 	AnomalyWindowDays int
+	AnomalyBy         string
 	NotifyOnlyRecent  bool
 	Test              bool
 	Version           bool
@@ -46,6 +49,7 @@ sends health check ping to ms teams webhook
 	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
 	flag.BoolVar(&f.Anomaly, "anomaly", false, "record and watch for anomalies (keeping this true not notify on normal matching errors, only on anomalies)")
+	flag.StringVar(&f.AnomalyBy, "anomaly-by", "date", "date or time")
 	flag.IntVar(&f.AnomalyWindowDays, "anomaly-window-days", 7, `anomaly window days
 keep data in DB for n days, older data will be deleted
 `)
@@ -76,5 +80,9 @@ func ParsePostFlags(f *Flags) {
 		if err := MkdirP(f.DBPath); err != nil {
 			panic("Failed to ensure directory for DB path: " + err.Error())
 		}
+	}
+	if f.Anomaly && f.AnomalyBy != "date" && f.AnomalyBy != "time" {
+		slog.Error("Invalid anomaly-by value", "value", f.AnomalyBy, "expected", "date or time")
+		os.Exit(1)
 	}
 }

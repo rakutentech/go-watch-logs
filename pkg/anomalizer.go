@@ -54,10 +54,10 @@ type Anomaly struct {
 	Value int
 }
 
-func (a *Anomalizer) GetAnomalies(match string) ([]int, error) {
+func (a *Anomalizer) GetAnomalies(match string, by string) ([]int, error) {
 	// Query to fetch anomalies within the time range
 	rows, err := a.db.Query(
-		`SELECT match, value
+		`SELECT value, time
 		FROM anomalies
 		WHERE key = ?
 		AND match = ?
@@ -84,6 +84,10 @@ func (a *Anomalizer) GetAnomalies(match string) ([]int, error) {
 
 func (a *Anomalizer) SaveAnomalies() error {
 	for _, counter := range a.counters {
+		// do not insert 0s
+		if counter.Value == 0 {
+			continue
+		}
 		_, err := a.db.Exec(`INSERT INTO anomalies (key, match, value, date, time) VALUES (?, ?, ?, ?, ?)`, a.key, counter.Match, counter.Value, a.now.Format("2006-01-02"), a.now.Format("15:04"))
 		if err != nil {
 			return err
