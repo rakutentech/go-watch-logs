@@ -77,5 +77,4 @@ func ParsePostFlags(f *Flags) {
 			panic("Failed to ensure directory for DB path: " + err.Error())
 		}
 	}
-
 }
