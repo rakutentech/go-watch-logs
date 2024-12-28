@@ -68,26 +68,31 @@ func main() {
 		watch(filePath)
 	}
 	if f.Every > 0 {
-		if err := gocron.Every(1).Second().Do(pkg.PrintMemUsage, &f); err != nil {
-			slog.Error("Error scheduling memory usage", "error", err.Error())
-			return
-		}
-		if err := gocron.Every(f.Every).Second().Do(cron); err != nil {
-			slog.Error("Error scheduling cron", "error", err.Error())
-			return
-		}
-		if err := gocron.Every(f.Every).Second().Do(syncFilePaths); err != nil {
-			slog.Error("Error scheduling syncFilePaths", "error", err.Error())
-			return
-		}
-		if f.HealthCheckEvery > 0 {
-			if err := gocron.Every(f.HealthCheckEvery).Second().Do(sendHealthCheck); err != nil {
-				slog.Error("Error scheduling health check", "error", err.Error())
-				return
-			}
-		}
-		<-gocron.Start()
+		startCron()
 	}
+}
+
+func startCron() {
+	if err := gocron.Every(1).Second().Do(pkg.PrintMemUsage, &f); err != nil {
+		slog.Error("Error scheduling memory usage", "error", err.Error())
+		return
+	}
+	if err := gocron.Every(f.Every).Second().Do(syncFilePaths); err != nil {
+		slog.Error("Error scheduling syncFilePaths", "error", err.Error())
+		return
+	}
+	if f.HealthCheckEvery > 0 {
+		if err := gocron.Every(f.HealthCheckEvery).Second().Do(sendHealthCheck); err != nil {
+			slog.Error("Error scheduling health check", "error", err.Error())
+			return
+		}
+	}
+
+	if err := gocron.Every(f.Every).Second().Do(cron); err != nil {
+		slog.Error("Error scheduling cron", "error", err.Error())
+		return
+	}
+	<-gocron.Start()
 }
 
 func cron() {
