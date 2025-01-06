@@ -2,8 +2,6 @@ package pkg
 
 import (
 	"flag"
-	"log/slog"
-	"os"
 )
 
 type Flags struct {
@@ -16,19 +14,16 @@ type Flags struct {
 	PostCommand  string
 	LogFile      string
 
-	Min               int
-	Every             uint64
-	HealthCheckEvery  uint64
-	Proxy             string
-	LogLevel          int
-	MemLimit          int
-	MSTeamsHook       string
-	Anomaly           bool
-	AnomalyWindowDays int
-	AnomalyBy         string
-	NotifyOnlyRecent  bool
-	Test              bool
-	Version           bool
+	Min              int
+	Every            uint64
+	HealthCheckEvery uint64
+	Proxy            string
+	LogLevel         int
+	MemLimit         int
+	MSTeamsHook      string
+	NotifyOnlyRecent bool
+	Test             bool
+	Version          bool
 }
 
 func Parseflags(f *Flags) {
@@ -48,11 +43,6 @@ sends health check ping to ms teams webhook
 	flag.IntVar(&f.MemLimit, "mem-limit", 100, "memory limit in MB (0 to disable)")
 	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
-	flag.BoolVar(&f.Anomaly, "anomaly", false, "record and watch for anomalies (keeping this true not notify on normal matching errors, only on anomalies)")
-	flag.StringVar(&f.AnomalyBy, "anomaly-by", "date", "date or time")
-	flag.IntVar(&f.AnomalyWindowDays, "anomaly-window-days", 7, `anomaly window days
-keep data in DB for n days, older data will be deleted
-`)
 	flag.BoolVar(&f.NotifyOnlyRecent, "notify-only-recent", true, "Notify on latest file only by timestamp based on --every")
 	flag.BoolVar(&f.Version, "version", false, "")
 	flag.BoolVar(&f.Test, "test", false, `Quickly test paths or regex
@@ -80,9 +70,5 @@ func ParsePostFlags(f *Flags) {
 		if err := MkdirP(f.DBPath); err != nil {
 			panic("Failed to ensure directory for DB path: " + err.Error())
 		}
-	}
-	if f.Anomaly && f.AnomalyBy != "date" && f.AnomalyBy != "time" {
-		slog.Error("Invalid anomaly-by value", "value", f.AnomalyBy, "expected", "date or time")
-		os.Exit(1)
 	}
 }

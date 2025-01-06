@@ -27,11 +27,9 @@ func TestNewWatcher(t *testing.T) {
 	ignorePattern := "ignore" // nolint: goconst
 
 	f := Flags{
-		DBPath:            "test",
-		Anomaly:           false,
-		AnomalyWindowDays: 1,
-		Match:             matchPattern,
-		Ignore:            ignorePattern,
+		DBPath: "test",
+		Match:  matchPattern,
+		Ignore: ignorePattern,
 	}
 
 	watcher, err := NewWatcher(filePath, f)
@@ -55,11 +53,9 @@ error:1`
 	ignorePattern := `ignore` // nolint: goconst
 
 	f := Flags{
-		DBPath:            "test",
-		Anomaly:           false,
-		AnomalyWindowDays: 1,
-		Match:             matchPattern,
-		Ignore:            ignorePattern,
+		DBPath: "test",
+		Match:  matchPattern,
+		Ignore: ignorePattern,
 	}
 
 	watcher, err := NewWatcher(filePath, f)
@@ -85,11 +81,9 @@ line2`
 	ignorePattern := `ignore` // nolint: goconst
 
 	f := Flags{
-		DBPath:            "test",
-		Anomaly:           false,
-		AnomalyWindowDays: 1,
-		Match:             matchPattern,
-		Ignore:            ignorePattern,
+		DBPath: "test",
+		Match:  matchPattern,
+		Ignore: ignorePattern,
 	}
 
 	watcher, err := NewWatcher(filePath, f)
@@ -129,11 +123,9 @@ error:1`
 	ignorePattern := `ignore`
 
 	f := Flags{
-		DBPath:            "test",
-		Anomaly:           false,
-		AnomalyWindowDays: 1,
-		Match:             matchPattern,
-		Ignore:            ignorePattern,
+		DBPath: "test",
+		Match:  matchPattern,
+		Ignore: ignorePattern,
 	}
 
 	watcher, err := NewWatcher(filePath, f)
@@ -157,11 +149,9 @@ func BenchmarkLoadAndSaveState(b *testing.B) {
 	ignorePattern := "ignore"
 
 	f := Flags{
-		DBPath:            dbName,
-		Anomaly:           false,
-		AnomalyWindowDays: 1,
-		Match:             matchPattern,
-		Ignore:            ignorePattern,
+		DBPath: dbName,
+		Match:  matchPattern,
+		Ignore: ignorePattern,
 	}
 
 	watcher, err := NewWatcher(filePath, f)
@@ -194,11 +184,9 @@ line2`
 	ignorePattern := `ignore`
 
 	f := Flags{
-		DBPath:            "test",
-		Anomaly:           false,
-		AnomalyWindowDays: 1,
-		Match:             matchPattern,
-		Ignore:            ignorePattern,
+		DBPath: "test",
+		Match:  matchPattern,
+		Ignore: ignorePattern,
 	}
 
 	watcher, err := NewWatcher(filePath, f)

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"database/sql"
 	"io"
-	"log/slog"
 	"os"
 	"regexp"
 	"strings"
@@ -12,20 +11,16 @@ import (
 )
 
 type Watcher struct {
-	db                *sql.DB
-	dbName            string // full path
-	filePath          string
-	anomalyKey        string
-	lastLineKey       string
-	lastFileSizeKey   string
-	matchPattern      string
-	ignorePattern     string
-	lastLineNum       int
-	lastFileSize      int64
-	anomalizer        *Anomalizer
-	anomaly           bool
-	anomalyWindowDays int
-	timestampNow      string
+	db              *sql.DB
+	dbName          string // full path
+	filePath        string
+	lastLineKey     string
+	lastFileSizeKey string
+	matchPattern    string
+	ignorePattern   string
+	lastLineNum     int
+	lastFileSize    int64
+	timestampNow    string
 }
 
 func NewWatcher(
@@ -40,20 +35,15 @@ func NewWatcher(
 	now := time.Now()
 
 	watcher := &Watcher{
-		db:                db,
-		dbName:            dbName,
-		filePath:          filePath,
-		anomaly:           f.Anomaly,
-		anomalizer:        nil,
-		anomalyWindowDays: f.AnomalyWindowDays,
-		matchPattern:      f.Match,
-		ignorePattern:     f.Ignore,
-		anomalyKey:        "anm-" + filePath,
-		lastLineKey:       "llk-" + filePath,
-		lastFileSizeKey:   "llks-" + filePath,
-		timestampNow:      now.Format("2006-01-02 15:04:05"),
+		db:              db,
+		dbName:          dbName,
+		filePath:        filePath,
+		matchPattern:    f.Match,
+		ignorePattern:   f.Ignore,
+		lastLineKey:     "llk-" + filePath,
+		lastFileSizeKey: "llks-" + filePath,
+		timestampNow:    now.Format("2006-01-02 15:04:05"),
 	}
-	watcher.anomalizer = NewAnomalizer(db, f, now, watcher.anomalyKey, f.AnomalyWindowDays)
 	if err := watcher.loadState(); err != nil {
 		return nil, err
 	}
@@ -133,28 +123,6 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 			continue
 		}
 
-		// anomaly insertion
-		if w.anomaly {
-			if w.matchPattern == "" {
-				slog.Info("Match entire line, incrementing +1 match as empty")
-				w.anomalizer.MemSafeCount("")
-				continue
-			}
-			match := regMatch.FindAllString(string(line), -1)
-			var exactMatch string
-			if len(match) >= 1 {
-				exactMatch = match[0]
-			}
-			if exactMatch != "" {
-				slog.Info("Match found", "line", string(line), "match", exactMatch)
-				if len(exactMatch) > 100 {
-					slog.Warn("Match too long, this impacts DB size, limiting to 100", "match", exactMatch)
-				}
-				w.anomalizer.MemSafeCount(LimitString(exactMatch, 100))
-			}
-		}
-
-		if !w.anomaly && regMatch.Match(line) {
 			lineStr := string(line)
 			if firstLine == "" {
 				firstLine = lineStr
@@ -164,16 +132,6 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 			}
 			lastLine = lineStr
 			matchCounts++
-		}
-	}
-	if w.anomaly {
-		slog.Info("Saving anomalies")
-		if err := w.anomalizer.SaveAnomalies(); err != nil {
-			return nil, err
-		}
-		slog.Info("Deleting old anomalies")
-		if err := w.anomalizer.DeleteOldAnomalies(); err != nil {
-			return nil, err
 		}
 	}
 

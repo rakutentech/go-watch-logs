@@ -101,19 +101,6 @@ func createTables(db *sql.DB) error {
 		slog.Error("Error creating state table", "error", err.Error())
 		return err
 	}
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS anomalies (
-			key TEXT KEY,
-			match TEXT,
-			value INTEGER,
-			date DATE,
-			time TIME
-		)
-	`)
-	if err != nil {
-		slog.Error("Error creating anomalies table", "error", err.Error())
-		return err
-	}
 
 	return nil
 }

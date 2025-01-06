@@ -52,12 +52,6 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50|HTTP/1.1" 40' --ignore='H
 go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
 ```
 
-### Watching a log file for anomalies
-
-```sh
-```
-
-
 **All done!**
 
 ## Help

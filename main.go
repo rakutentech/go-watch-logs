@@ -182,33 +182,27 @@ func watch(filePath string) {
 	}
 	slog.Info("Lines read", "count", result.LinesRead)
 	slog.Info("Scanning complete", "filePath", result.FilePath)
-	if f.Anomaly {
-		slog.Info("Anomaly detection started", "filePath", result.FilePath)
+	slog.Info("1st line (truncated to 200 chars)", "date", result.FirstDate, "line", pkg.Truncate(result.FirstLine, pkg.TruncateMax))
+	slog.Info("Preview line (truncated to 200 chars)", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
+	slog.Info("Last line (truncated to 200 chars)", "date", result.LastDate, "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
+	slog.Info("Error count", "percent", fmt.Sprintf("%d (%.2f)", result.ErrorCount, result.ErrorPercent)+"%")
+
+	if result.ErrorCount < 0 {
+		return
+	}
+	if result.ErrorCount < f.Min {
+		return
+	}
+	if !f.NotifyOnlyRecent {
+		pkg.Notify(result, f, version)
 	}
 
-	if !f.Anomaly {
-		slog.Info("1st line (truncated to 200 chars)", "date", result.FirstDate, "line", pkg.Truncate(result.FirstLine, pkg.TruncateMax))
-		slog.Info("Preview line (truncated to 200 chars)", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
-		slog.Info("Last line (truncated to 200 chars)", "date", result.LastDate, "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
-		slog.Info("Error count", "percent", fmt.Sprintf("%d (%.2f)", result.ErrorCount, result.ErrorPercent)+"%")
-
-		if result.ErrorCount < 0 {
-			return
-		}
-		if result.ErrorCount < f.Min {
-			return
-		}
-		if !f.NotifyOnlyRecent {
-			pkg.Notify(result, f, version)
-		}
-
-		if f.NotifyOnlyRecent && pkg.IsRecentlyModified(result.FileInfo, f.Every) {
-			pkg.Notify(result, f, version)
-		}
-		if f.PostCommand != "" {
-			if _, err := pkg.ExecShell(f.PostCommand); err != nil {
-				slog.Error("Error running post command", "error", err.Error())
-			}
+	if f.NotifyOnlyRecent && pkg.IsRecentlyModified(result.FileInfo, f.Every) {
+		pkg.Notify(result, f, version)
+	}
+	if f.PostCommand != "" {
+		if _, err := pkg.ExecShell(f.PostCommand); err != nil {
+			slog.Error("Error running post command", "error", err.Error())
 		}
 	}
 }
