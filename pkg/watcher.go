@@ -122,7 +122,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		if w.ignorePattern != "" && regIgnore.Match(line) {
 			continue
 		}
-
+		if regMatch.Match(line) {
 			lineStr := string(line)
 			if firstLine == "" {
 				firstLine = lineStr
