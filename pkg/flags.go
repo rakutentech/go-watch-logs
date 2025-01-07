@@ -29,8 +29,8 @@ type Flags struct {
 func Parseflags(f *Flags) {
 	flag.StringVar(&f.FilePath, "file-path", "", "full path to the file to watch")
 	flag.StringVar(&f.FilePath, "f", "", "(short for --file-path) full path to the file to watch")
-	flag.StringVar(&f.LogFile, "log-file", "", "full path to output log file")
-	flag.StringVar(&f.DBPath, "db-path", GetHomedir()+"/.go-watch-logs.db", "path to store db file. Note dir must exist prior")
+	flag.StringVar(&f.LogFile, "log-file", "", "full path to output log file. Empty will log to stdout")
+	flag.StringVar(&f.DBPath, "db-path", GetHomedir()+"/.go-watch-logs.db", "path to store db file.")
 	flag.StringVar(&f.Match, "match", "", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.Ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
 	flag.StringVar(&f.PostAlways, "post-always", "", "run this shell command after every scan")
