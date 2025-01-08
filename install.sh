@@ -8,7 +8,8 @@ THIS_PROJECT_NAME='go-watch-logs'
 THISOS=$(uname -s)
 ARCH=$(uname -m)
 
-INSTALL_VERSION=${1:-latest}
+INSTALL_VERSION=${INSTALL_VERSION:-latest}
+echo "Installing $THIS_PROJECT_NAME version: $INSTALL_VERSION"
 
 case $THISOS in
    Linux*)
