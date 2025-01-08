@@ -57,9 +57,14 @@ if [ "$INSTALL_VERSION" = "latest" ]; then
   DOWNLOAD_URL="https://github.com/rakutentech/$THIS_PROJECT_NAME/releases/$INSTALL_VERSION/download/$THE_ARCH_BIN"
 fi
 
-curl -kL --progress-bar "$DOWNLOAD_URL" -o "$BIN_DIR"/$THIS_PROJECT_NAME
+echo "Downloading from $DOWNLOAD_URL..."
+HTTP_STATUS=$(curl -kL --progress-bar -w "%{http_code}" -o "$BIN_DIR/$THIS_PROJECT_NAME" "$DOWNLOAD_URL")
 
-chmod +x "$BIN_DIR"/$THIS_PROJECT_NAME
+if [ "$HTTP_STATUS" -ne 200 ]; then
+  echo "Error: Failed to download $THIS_PROJECT_NAME. HTTP status code: $HTTP_STATUS"
+  exit 1
+fi
+
+chmod +x "$BIN_DIR/$THIS_PROJECT_NAME"
 
 echo "Installed successfully to: $BIN_DIR/$THIS_PROJECT_NAME"
-
