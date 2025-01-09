@@ -2,10 +2,57 @@ package pkg
 
 import (
 	"fmt"
+	"log/slog"
+	"os"
 	"runtime"
 
 	gmt "github.com/kevincobain2000/go-msteams/src"
 )
+
+func NotifyOwnError(e error, f Flags) {
+	hostname, _ := os.Hostname()
+	details := []gmt.Details{
+		{
+			Label:   "Hostname",
+			Message: hostname,
+		},
+		{
+			Label:   "Error",
+			Message: e.Error(),
+		},
+	}
+	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
+	if err != nil {
+		slog.Error("Error sending to Teams", "error", err.Error())
+	} else {
+		slog.Info("Successfully sent own error to MS Teams")
+	}
+}
+
+func Notify(result *ScanResult, f Flags, version string) {
+	slog.Info("Sending to MS Teams")
+	details := GetAlertDetails(&f, version, result)
+
+	var logDetails []interface{} // nolint: prealloc
+	for _, detail := range details {
+		logDetails = append(logDetails, detail.Label, detail.Message)
+	}
+
+	if f.MSTeamsHook == "" {
+		slog.Warn("MS Teams hook not set")
+		return
+	}
+	slog.Info("Sending Alert Notify", logDetails...)
+
+	hostname, _ := os.Hostname()
+
+	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
+	if err != nil {
+		slog.Error("Error sending to Teams", "error", err.Error())
+	} else {
+		slog.Info("Successfully sent to MS Teams")
+	}
+}
 
 func GetPanicDetails(f *Flags, m *runtime.MemStats) []gmt.Details {
 	return []gmt.Details{

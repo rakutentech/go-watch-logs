@@ -36,6 +36,8 @@ curl -sL https://raw.githubusercontent.com/rakutentech/go-watch-logs/master/inst
 
 ## Examples
 
+### Watching a log file for errors
+
 ```sh
 # match error patterns and notify on MS Teams
 go-watch-logs --file-path=my.log --match="error:pattern1|error:pattern2" --ms-teams-hook="https://outlook.office.com/webhook/xxxxx"
@@ -49,7 +51,6 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50|HTTP/1.1" 40' --ignore='H
 # match 50x and run every 60 seconds
 go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
 ```
-
 
 **All done!**
 

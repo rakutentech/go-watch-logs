@@ -25,3 +25,5 @@ tmp/
 go-watch-logs
 *.sqlite
 *.sqlite3
+logs/
+testdata/

@@ -21,8 +21,11 @@ var filePaths []string
 var filePathsMutex sync.Mutex
 
 func main() {
-	flags()
-	pkg.SetupLoggingStdout(f.LogLevel)
+	pkg.Parseflags(&f)
+	pkg.SetupLoggingStdout(f.LogLevel, f.LogFile) // nolint: errcheck
+	flag.VisitAll(func(f *flag.Flag) {
+		slog.Info(f.Name, slog.String("value", f.Value.String()))
+	})
 	parseProxy()
 	wantsVersion()
 	validate()
@@ -65,26 +68,31 @@ func main() {
 		watch(filePath)
 	}
 	if f.Every > 0 {
-		if err := gocron.Every(1).Second().Do(pkg.PrintMemUsage, &f); err != nil {
-			slog.Error("Error scheduling memory usage", "error", err.Error())
-			return
-		}
-		if err := gocron.Every(f.Every).Second().Do(cron); err != nil {
-			slog.Error("Error scheduling cron", "error", err.Error())
-			return
-		}
-		if err := gocron.Every(f.Every).Second().Do(syncFilePaths); err != nil {
-			slog.Error("Error scheduling syncFilePaths", "error", err.Error())
-			return
-		}
-		if f.HealthCheckEvery > 0 {
-			if err := gocron.Every(f.HealthCheckEvery).Second().Do(sendHealthCheck); err != nil {
-				slog.Error("Error scheduling health check", "error", err.Error())
-				return
-			}
-		}
-		<-gocron.Start()
+		startCron()
 	}
+}
+
+func startCron() {
+	if err := gocron.Every(1).Second().Do(pkg.PrintMemUsage, &f); err != nil {
+		slog.Error("Error scheduling memory usage", "error", err.Error())
+		return
+	}
+	if err := gocron.Every(f.Every).Second().Do(syncFilePaths); err != nil {
+		slog.Error("Error scheduling syncFilePaths", "error", err.Error())
+		return
+	}
+	if f.HealthCheckEvery > 0 {
+		if err := gocron.Every(f.HealthCheckEvery).Second().Do(sendHealthCheck); err != nil {
+			slog.Error("Error scheduling health check", "error", err.Error())
+			return
+		}
+	}
+
+	if err := gocron.Every(f.Every).Second().Do(cron); err != nil {
+		slog.Error("Error scheduling cron", "error", err.Error())
+		return
+	}
+	<-gocron.Start()
 }
 
 func cron() {
@@ -157,7 +165,8 @@ func validate() {
 }
 
 func watch(filePath string) {
-	watcher, err := pkg.NewWatcher(f.DBPath, filePath, f.Match, f.Ignore)
+	watcher, err := pkg.NewWatcher(filePath, f)
+
 	if err != nil {
 		slog.Error("Error creating watcher", "error", err.Error(), "filePath", filePath)
 		return
@@ -171,14 +180,12 @@ func watch(filePath string) {
 		slog.Error("Error scanning file", "error", err.Error(), "filePath", filePath)
 		return
 	}
-	slog.Info("1st line", "date", result.FirstDate, "line", pkg.Truncate(result.FirstLine, pkg.TruncateMax))
-	slog.Info("Preview line", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
-	slog.Info("Last line", "date", result.LastDate, "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
-	slog.Info("Error count", "percent", fmt.Sprintf("%d (%.2f)", result.ErrorCount, result.ErrorPercent)+"%")
-
 	slog.Info("Lines read", "count", result.LinesRead)
-
 	slog.Info("Scanning complete", "filePath", result.FilePath)
+	slog.Info("1st line (truncated to 200 chars)", "date", result.FirstDate, "line", pkg.Truncate(result.FirstLine, pkg.TruncateMax))
+	slog.Info("Preview line (truncated to 200 chars)", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
+	slog.Info("Last line (truncated to 200 chars)", "date", result.LastDate, "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
+	slog.Info("Error count", "percent", fmt.Sprintf("%d (%.2f)", result.ErrorCount, result.ErrorPercent)+"%")
 
 	if result.ErrorCount < 0 {
 		return
@@ -186,65 +193,18 @@ func watch(filePath string) {
 	if result.ErrorCount < f.Min {
 		return
 	}
-	notify(result)
-	if f.PostMin != "" {
-		if _, err := pkg.ExecShell(f.PostMin); err != nil {
+	if !f.NotifyOnlyRecent {
+		pkg.Notify(result, f, version)
+	}
+
+	if f.NotifyOnlyRecent && pkg.IsRecentlyModified(result.FileInfo, f.Every) {
+		pkg.Notify(result, f, version)
+	}
+	if f.PostCommand != "" {
+		if _, err := pkg.ExecShell(f.PostCommand); err != nil {
 			slog.Error("Error running post command", "error", err.Error())
 		}
 	}
-}
-
-func notify(result *pkg.ScanResult) {
-	slog.Info("Sending to MS Teams")
-	details := pkg.GetAlertDetails(&f, version, result)
-
-	var logDetails []interface{} // nolint: prealloc
-	for _, detail := range details {
-		logDetails = append(logDetails, detail.Label, detail.Message)
-	}
-
-	if f.MSTeamsHook == "" {
-		slog.Warn("MS Teams hook not set")
-		return
-	}
-	slog.Info("Sending Alert Notify", logDetails...)
-
-	hostname, _ := os.Hostname()
-
-	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
-	if err != nil {
-		slog.Error("Error sending to Teams", "error", err.Error())
-	} else {
-		slog.Info("Successfully sent to MS Teams")
-	}
-}
-
-func flags() {
-	flag.StringVar(&f.FilePath, "file-path", "", "full path to the log file")
-	flag.StringVar(&f.FilePath, "f", "", "(short for --file-path) full path to the log file")
-	flag.StringVar(&f.DBPath, "db-path", pkg.GetHomedir()+"/.go-watch-logs.db", "path to store db file")
-	flag.StringVar(&f.Match, "match", "", "regex for matching errors (empty to match all lines)")
-	flag.StringVar(&f.Ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
-	flag.StringVar(&f.PostAlways, "post-always", "", "run this shell command after every scan")
-	flag.StringVar(&f.PostMin, "post-min", "", "run this shell command after every scan when min errors are found")
-	flag.Uint64Var(&f.Every, "every", 0, "run every n seconds (0 to run once)")
-	flag.Uint64Var(&f.HealthCheckEvery, "health-check-every", 0, "run health check every n seconds (0 to disable)")
-	flag.IntVar(&f.LogLevel, "log-level", 0, "log level (0=info, -4=debug, 4=warn, 8=error)")
-	flag.IntVar(&f.MemLimit, "mem-limit", 100, "memory limit in MB (0 to disable)")
-	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
-	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
-	flag.BoolVar(&f.Version, "version", false, "")
-	flag.BoolVar(&f.Test, "test", false, `Quickly test paths or regex
-# will test if the input matches the regex
-echo test123 | go-watch-logs --match=123 --test
-# will test if the file paths are found and list them
-go-watch-logs --file-path=./ssl_access.*log --test
-	`)
-
-	flag.StringVar(&f.Proxy, "proxy", "", "http proxy for webhooks")
-	flag.StringVar(&f.MSTeamsHook, "ms-teams-hook", "", "ms teams webhook")
-
-	flag.Parse()
 }
 
 func parseProxy() string {

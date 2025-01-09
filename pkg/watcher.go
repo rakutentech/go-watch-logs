@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"database/sql"
 	"io"
-	"log/slog"
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type Watcher struct {
@@ -20,28 +20,29 @@ type Watcher struct {
 	ignorePattern   string
 	lastLineNum     int
 	lastFileSize    int64
+	timestampNow    string
 }
 
 func NewWatcher(
-	dbName string,
 	filePath string,
-	matchPattern string,
-	ignorePattern string,
+	f Flags,
 ) (*Watcher, error) {
-	dbName += ".sqlite"
+	dbName := f.DBPath + ".sqlite"
 	db, err := InitDB(dbName)
 	if err != nil {
 		return nil, err
 	}
+	now := time.Now()
 
 	watcher := &Watcher{
 		db:              db,
 		dbName:          dbName,
 		filePath:        filePath,
-		matchPattern:    matchPattern,
-		ignorePattern:   ignorePattern,
+		matchPattern:    f.Match,
+		ignorePattern:   f.Ignore,
 		lastLineKey:     "llk-" + filePath,
 		lastFileSizeKey: "llks-" + filePath,
+		timestampNow:    now.Format("2006-01-02 15:04:05"),
 	}
 	if err := watcher.loadState(); err != nil {
 		return nil, err
@@ -52,6 +53,7 @@ func NewWatcher(
 
 type ScanResult struct {
 	FilePath     string
+	FileInfo     os.FileInfo
 	ErrorCount   int
 	ErrorPercent float64
 	LinesRead    int
@@ -62,8 +64,10 @@ type ScanResult struct {
 	LastDate     string
 }
 
+var lines = []string{}
+
 func (w *Watcher) Scan() (*ScanResult, error) {
-	errorCounts := 0
+	matchCounts := 0
 	firstLine := ""
 	lastLine := ""
 	previewLine := ""
@@ -90,11 +94,11 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		return nil, err
 	}
 
-	re, err := regexp.Compile(w.matchPattern)
+	regMatch, err := regexp.Compile(w.matchPattern)
 	if err != nil {
 		return nil, err
 	}
-	ri, err := regexp.Compile(w.ignorePattern)
+	regIgnore, err := regexp.Compile(w.ignorePattern)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +109,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	bytesRead := w.lastFileSize
 
 	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
 		line := scanner.Bytes()
 		bytesRead += int64(len(line)) + 1 // Adding 1 for the newline character
 		currentLineNum++
@@ -113,11 +118,11 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		if linesRead < 0 {
 			linesRead = -linesRead
 		}
-		slog.Debug("Scanning line", "line", string(line), "lineNum", currentLineNum, "linesRead", linesRead)
-		if w.ignorePattern != "" && ri.Match(line) {
+
+		if w.ignorePattern != "" && regIgnore.Match(line) {
 			continue
 		}
-		if re.Match(line) {
+		if regMatch.Match(line) {
 			lineStr := string(line)
 			if firstLine == "" {
 				firstLine = lineStr
@@ -126,7 +131,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 				previewLine += lineStr + "\n"
 			}
 			lastLine = lineStr
-			errorCounts++
+			matchCounts++
 		}
 	}
 
@@ -136,7 +141,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 
 	matchPercentage := 0.0
 	if linesRead > 0 {
-		matchPercentage = float64(errorCounts) * 100 / float64(linesRead)
+		matchPercentage = float64(matchCounts) * 100 / float64(linesRead)
 		if matchPercentage > 100 {
 			matchPercentage = 100
 		}
@@ -148,20 +153,21 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	w.lastFileSize = bytesRead
 	if err := w.saveState(); err != nil {
 		if strings.HasPrefix(err.Error(), "database is locked") {
-			if err := Vacuum(w.dbName); err != nil {
+			if err := DeleteDB(w.dbName); err != nil {
 				return nil, err
 			}
 		}
 		return nil, err
 	}
 	return &ScanResult{
-		ErrorCount:   errorCounts,
-		FirstLine:    firstLine,
+		ErrorCount:   matchCounts,
 		FirstDate:    SearchDate(firstLine),
+		LastDate:     SearchDate(lastLine),
+		FirstLine:    firstLine,
 		PreviewLine:  previewLine,
 		LastLine:     lastLine,
-		LastDate:     SearchDate(lastLine),
 		FilePath:     w.filePath,
+		FileInfo:     fileInfo,
 		ErrorPercent: matchPercentage,
 		LinesRead:    linesRead,
 	}, nil
@@ -187,14 +193,15 @@ func (w *Watcher) loadState() error {
 }
 
 func (w *Watcher) saveState() error {
-	_, err := w.db.Exec(`REPLACE INTO state (key, value) VALUES (?, ?)`, w.lastLineKey, w.lastLineNum)
+	_, err := w.db.Exec(`REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)`, w.lastLineKey, w.lastLineNum, w.timestampNow)
 	if err != nil {
 		return err
 	}
-	_, err = w.db.Exec(`REPLACE INTO state (key, value) VALUES (?, ?)`, w.lastFileSizeKey, w.lastFileSize)
+	_, err = w.db.Exec(`REPLACE INTO state (key, value, updated_at) VALUES (?, ?, ?)`, w.lastFileSizeKey, w.lastFileSize, w.timestampNow)
 	return err
 }
 
 func (w *Watcher) Close() error {
-	return w.db.Close()
+	// return w.db.Close()
+	return nil
 }
