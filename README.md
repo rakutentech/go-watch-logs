@@ -124,4 +124,6 @@ go test ./...
 - **v1.0.2** `--post`, `--post-min`, `--health-check-every` and preview added
 - **v1.0.7** Added percentage
 - **v1.0.10** Better tint and added `-test` flag and `-f` for short form of `--file-path`
+- **v1.0.12** Stable
+- **v1.0.13** Performance improvements via singletons
 
