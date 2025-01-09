@@ -69,12 +69,16 @@ func GetPanicDetails(f *Flags, m *runtime.MemStats) []gmt.Details {
 			Message: f.Ignore,
 		},
 		{
-			Label:   "Mem Limit (MB) Exceeded",
-			Message: fmt.Sprintf("%d", f.MemLimit),
+			Label:   "Panic Message",
+			Message: "go-watch-logs has panicked",
 		},
 		{
-			Label:   "Alloc (MB)",
-			Message: fmt.Sprintf("%d", BToMb(m.Alloc)),
+			Label:   "Mem Limit",
+			Message: fmt.Sprintf("%d(MB)", f.MemLimit),
+		},
+		{
+			Label:   "Alloc",
+			Message: fmt.Sprintf("%d(MB)", BToMb(m.Alloc)),
 		},
 	}
 }
