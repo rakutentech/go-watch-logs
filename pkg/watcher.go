@@ -64,8 +64,6 @@ type ScanResult struct {
 	LastDate     string
 }
 
-var lines = []string{}
-
 func (w *Watcher) Scan() (*ScanResult, error) {
 	matchCounts := 0
 	firstLine := ""
@@ -109,7 +107,6 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	bytesRead := w.lastFileSize
 
 	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
 		line := scanner.Bytes()
 		bytesRead += int64(len(line)) + 1 // Adding 1 for the newline character
 		currentLineNum++
