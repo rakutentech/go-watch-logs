@@ -66,7 +66,7 @@ func FilesByPattern(pattern string, onlyRecent bool) ([]string, error) {
 		for _, file := range files {
 			info, err := os.Stat(file)
 			if err != nil {
-				return nil, err
+				continue
 			}
 			if IsRecentlyModified(info, 86400) {
 				recentFiles = append(recentFiles, file)
