@@ -36,7 +36,7 @@ func main() {
 	}
 
 	var err error
-	newFilePaths, err := pkg.FilesByPattern(f.FilePath)
+	newFilePaths, err := pkg.FilesByPattern(f.FilePath, f.NotifyOnlyRecent)
 	if err != nil {
 		slog.Error("Error finding files", "error", err.Error())
 		return
@@ -111,7 +111,7 @@ func cron() {
 
 func syncFilePaths() {
 	var err error
-	newFilePaths, err := pkg.FilesByPattern(f.FilePath)
+	newFilePaths, err := pkg.FilesByPattern(f.FilePath, f.NotifyOnlyRecent)
 	if err != nil {
 		slog.Error("Error finding files", "error", err.Error())
 		return

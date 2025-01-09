@@ -33,7 +33,7 @@ func IsTextFile(filename string) (bool, error) {
 	return utf8.Valid(buffer[:n]), nil
 }
 
-func FilesByPattern(pattern string) ([]string, error) {
+func FilesByPattern(pattern string, onlyRecent bool) ([]string, error) {
 	// Check if the pattern is a directory
 	info, err := os.Stat(pattern)
 	if err == nil && info.IsDir() {
@@ -59,6 +59,22 @@ func FilesByPattern(pattern string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// only return files that are recently modified
+	if onlyRecent {
+		var recentFiles []string
+		for _, file := range files {
+			info, err := os.Stat(file)
+			if err != nil {
+				return nil, err
+			}
+			if IsRecentlyModified(info, 86400) {
+				recentFiles = append(recentFiles, file)
+			}
+		}
+		return recentFiles, nil
+	}
+
 	return files, nil
 }
 func GetHomedir() string {

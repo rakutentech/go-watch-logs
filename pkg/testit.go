@@ -6,7 +6,7 @@ import (
 )
 
 func TestIt(filepath string, match string) {
-	fps, err := FilesByPattern(filepath)
+	fps, err := FilesByPattern(filepath, false)
 	if err != nil {
 		slog.Error("Error finding files", "error", err.Error())
 	}
