@@ -38,10 +38,12 @@ func main() {
 	var err error
 	newFilePaths, err := pkg.FilesByPattern(f.FilePath, f.NotifyOnlyRecent)
 	if err != nil {
+		pkg.NotifyOwnError(fmt.Errorf("error finding files: %s", err.Error()), f)
 		slog.Error("Error finding files", "error", err.Error())
 		return
 	}
 	if len(newFilePaths) == 0 {
+		pkg.NotifyOwnError(fmt.Errorf("no files found"), f)
 		slog.Error("No files found", "filePath", f.FilePath)
 		slog.Warn("Keep watching for new files")
 	}
@@ -55,10 +57,12 @@ func main() {
 	for _, filePath := range filePaths {
 		isText, err := pkg.IsTextFile(filePath)
 		if err != nil {
+			pkg.NotifyOwnError(fmt.Errorf("error checking if file is text: %s", err.Error()), f)
 			slog.Error("Error checking if file is text", "error", err.Error(), "filePath", filePath)
 			return
 		}
 		if !isText {
+			pkg.NotifyOwnError(fmt.Errorf("file is not a text file"), f)
 			slog.Error("File is not a text file", "filePath", filePath)
 			return
 		}
@@ -74,21 +78,25 @@ func main() {
 
 func startCron() {
 	if err := gocron.Every(1).Second().Do(pkg.PrintMemUsage, &f); err != nil {
+		pkg.NotifyOwnError(fmt.Errorf("error scheduling memory usage: %s", err.Error()), f)
 		slog.Error("Error scheduling memory usage", "error", err.Error())
 		return
 	}
 	if err := gocron.Every(f.Every).Second().Do(syncFilePaths); err != nil {
+		pkg.NotifyOwnError(fmt.Errorf("error scheduling syncFilePaths: %s", err.Error()), f)
 		slog.Error("Error scheduling syncFilePaths", "error", err.Error())
 		return
 	}
 	if f.HealthCheckEvery > 0 {
 		if err := gocron.Every(f.HealthCheckEvery).Second().Do(sendHealthCheck); err != nil {
+			pkg.NotifyOwnError(fmt.Errorf("error scheduling health check: %s", err.Error()), f)
 			slog.Error("Error scheduling health check", "error", err.Error())
 			return
 		}
 	}
 
 	if err := gocron.Every(f.Every).Second().Do(cron); err != nil {
+		pkg.NotifyOwnError(fmt.Errorf("error scheduling cron: %s", err.Error()), f)
 		slog.Error("Error scheduling cron", "error", err.Error())
 		return
 	}
@@ -104,6 +112,7 @@ func cron() {
 	}
 	if f.PostAlways != "" {
 		if _, err := pkg.ExecShell(f.PostAlways); err != nil {
+			pkg.NotifyOwnError(fmt.Errorf("error running post always command: %s", err.Error()), f)
 			slog.Error("Error running post command", "error", err.Error())
 		}
 	}
@@ -113,10 +122,12 @@ func syncFilePaths() {
 	var err error
 	newFilePaths, err := pkg.FilesByPattern(f.FilePath, f.NotifyOnlyRecent)
 	if err != nil {
+		pkg.NotifyOwnError(fmt.Errorf("error finding files: %s", err.Error()), f)
 		slog.Error("Error finding files", "error", err.Error())
 		return
 	}
 	if len(newFilePaths) == 0 {
+		pkg.NotifyOwnError(fmt.Errorf("no files found"), f)
 		slog.Error("No files found", "filePath", f.FilePath)
 		slog.Warn("Keep watching for new files")
 		return
@@ -159,6 +170,7 @@ func sendHealthCheck() {
 
 func validate() {
 	if f.FilePath == "" {
+		pkg.NotifyOwnError(fmt.Errorf("file-path is required"), f)
 		slog.Error("file-path is required")
 		os.Exit(1)
 	}
@@ -168,6 +180,7 @@ func watch(filePath string) {
 	watcher, err := pkg.NewWatcher(filePath, f)
 
 	if err != nil {
+		pkg.NotifyOwnError(fmt.Errorf("error creating watcher: %s", err.Error()), f)
 		slog.Error("Error creating watcher", "error", err.Error(), "filePath", filePath)
 		return
 	}
@@ -177,6 +190,7 @@ func watch(filePath string) {
 
 	result, err := watcher.Scan()
 	if err != nil {
+		pkg.NotifyOwnError(fmt.Errorf("error scanning file: %s", err.Error()), f)
 		slog.Error("Error scanning file", "error", err.Error(), "filePath", filePath)
 		return
 	}
@@ -202,6 +216,7 @@ func watch(filePath string) {
 	}
 	if f.PostCommand != "" {
 		if _, err := pkg.ExecShell(f.PostCommand); err != nil {
+			pkg.NotifyOwnError(fmt.Errorf("error running post command: %s", err.Error()), f)
 			slog.Error("Error running post command", "error", err.Error())
 		}
 	}
