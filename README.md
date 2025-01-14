@@ -126,4 +126,5 @@ go test ./...
 - **v1.0.10** Better tint and added `-test` flag and `-f` for short form of `--file-path`
 - **v1.0.12** Stable
 - **v1.0.13** Performance improvements via singletons
+- **v1.0.19** Global slog handler and notifier on own alerts
 
