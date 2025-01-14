@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"runtime"
 
 	gmt "github.com/kevincobain2000/go-msteams/src"
 )
 
-func NotifyOwnError(e error, f Flags) {
+func NotifyOwnError(e error, r slog.Record, msTeamsHook, proxy string) {
 	hostname, _ := os.Hostname()
 	details := []gmt.Details{
 		{
@@ -21,7 +20,18 @@ func NotifyOwnError(e error, f Flags) {
 			Message: e.Error(),
 		},
 	}
-	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
+	r.Attrs(func(attr slog.Attr) bool {
+		details = append(details, gmt.Details{
+			Label:   attr.Key,
+			Message: fmt.Sprintf("%v", attr.Value),
+		})
+		return true
+	})
+	if msTeamsHook == "" {
+		slog.Warn("MS Teams hook not set")
+		return
+	}
+	err := gmt.Send(hostname, details, msTeamsHook, proxy)
 	if err != nil {
 		slog.Error("Error sending to Teams", "error", err.Error())
 	} else {
@@ -54,34 +64,6 @@ func Notify(result *ScanResult, f Flags, version string) {
 	}
 }
 
-func GetPanicDetails(f *Flags, m *runtime.MemStats) []gmt.Details {
-	return []gmt.Details{
-		{
-			Label:   "File Path",
-			Message: f.FilePath,
-		},
-		{
-			Label:   "Match Pattern",
-			Message: f.Match,
-		},
-		{
-			Label:   "Ignore Pattern",
-			Message: f.Ignore,
-		},
-		{
-			Label:   "Panic Message",
-			Message: "go-watch-logs has panicked",
-		},
-		{
-			Label:   "Mem Limit",
-			Message: fmt.Sprintf("%d(MB)", f.MemLimit),
-		},
-		{
-			Label:   "Alloc",
-			Message: fmt.Sprintf("%d(MB)", BToMb(m.Alloc)),
-		},
-	}
-}
 func GetHealthCheckDetails(f *Flags, version string) []gmt.Details {
 	return []gmt.Details{
 		{

@@ -5,8 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-
-	gmt "github.com/kevincobain2000/go-msteams/src"
 )
 
 func SystemProxy() string {
@@ -33,7 +31,7 @@ func PrintMemUsage(f *Flags) {
 		"HeapSys (Bytes)", m.HeapSys,
 	)
 	if f.MemLimit > 0 && m.Alloc > uint64(f.MemLimit)*1024*1024 {
-		sendPanicCheck(f, &m)
+		slog.Error("Memory Limit Exceeded", "limit", f.MemLimit, "current", BToMb(m.Alloc))
 		panic("Memory Limit Exceeded")
 	}
 }
@@ -46,29 +44,6 @@ func ExecShell(command string) (string, error) {
 	cmd := exec.Command("sh", "-c", command)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
-}
-
-func sendPanicCheck(f *Flags, m *runtime.MemStats) {
-	details := GetPanicDetails(f, m)
-	var logDetails []interface{} // nolint: prealloc
-	for _, detail := range details {
-		logDetails = append(logDetails, detail.Label, detail.Message)
-	}
-	slog.Warn("Sending Panic Check", logDetails...)
-
-	if f.MSTeamsHook == "" {
-		slog.Warn("MS Teams hook not set")
-		return
-	}
-
-	hostname, _ := os.Hostname()
-
-	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
-	if err != nil {
-		slog.Error("Error sending to Teams", "error", err.Error())
-	} else {
-		slog.Info("Successfully sent to MS Teams")
-	}
 }
 
 func ReadFromPipeInput() string {
