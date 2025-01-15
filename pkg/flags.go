@@ -21,6 +21,7 @@ type Flags struct {
 	MemLimit         int
 	MSTeamsHook      string
 	NotifyOnlyRecent bool
+	MaxBufferSizeMB  int
 	Test             bool
 	Version          bool
 }
@@ -41,6 +42,7 @@ sends health check ping to ms teams webhook
 	flag.IntVar(&f.MemLimit, "mem-limit", 256, "memory limit in MB (0 to disable)")
 	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
+	flag.IntVar(&f.MaxBufferSizeMB, "max-buffer-size-mb", 0, "max buffer size in MB, default is 0 (not provided) for go's default 64KB")
 	flag.BoolVar(&f.NotifyOnlyRecent, "notify-only-recent", true, "Notify on latest file only by timestamp based on --every")
 	flag.BoolVar(&f.Version, "version", false, "")
 	flag.BoolVar(&f.Test, "test", false, `Quickly test paths or regex

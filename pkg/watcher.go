@@ -18,6 +18,7 @@ type Watcher struct {
 	lastFileSizeKey string
 	matchPattern    string
 	ignorePattern   string
+	maxBufferSizeMB int
 	lastLineNum     int
 	lastFileSize    int64
 	timestampNow    string
@@ -43,6 +44,7 @@ func NewWatcher(
 		lastLineKey:     "llk-" + filePath,
 		lastFileSizeKey: "llks-" + filePath,
 		timestampNow:    now.Format("2006-01-02 15:04:05"),
+		maxBufferSizeMB: f.MaxBufferSizeMB,
 	}
 	if err := watcher.loadState(); err != nil {
 		return nil, err
@@ -102,6 +104,10 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	}
 
 	scanner := bufio.NewScanner(file)
+	if w.maxBufferSizeMB > 0 {
+		// for large lines
+		scanner.Buffer(make([]byte, 0, 64*1024), w.maxBufferSizeMB*1024*1024)
+	}
 	currentLineNum := 1
 	linesRead := 0
 	bytesRead := w.lastFileSize
