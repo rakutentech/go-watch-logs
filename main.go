@@ -102,11 +102,6 @@ func cron() {
 	for _, filePath := range filePaths {
 		watch(filePath)
 	}
-	if f.PostAlways != "" {
-		if _, err := pkg.ExecShell(f.PostAlways); err != nil {
-			slog.Error("Error running post command", "error", err.Error())
-		}
-	}
 }
 
 func syncFilePaths() {

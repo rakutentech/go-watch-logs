@@ -10,7 +10,6 @@ type Flags struct {
 	Match        string
 	Ignore       string
 	DBPath       string
-	PostAlways   string
 	PostCommand  string
 	LogFile      string
 
@@ -33,7 +32,6 @@ func Parseflags(f *Flags) {
 	flag.StringVar(&f.DBPath, "db-path", GetHomedir()+"/.go-watch-logs.db", "path to store db file.")
 	flag.StringVar(&f.Match, "match", "", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.Ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
-	flag.StringVar(&f.PostAlways, "post-always", "", "run this shell command after every scan")
 	flag.StringVar(&f.PostCommand, "post-cmd", "", "run this shell command after every scan when min errors are found")
 	flag.Uint64Var(&f.Every, "every", 0, "run every n seconds (0 to run once)")
 	flag.Uint64Var(&f.HealthCheckEvery, "health-check-every", 0, `run health check every n seconds (0 to disable)
