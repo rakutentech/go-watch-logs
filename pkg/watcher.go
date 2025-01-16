@@ -3,7 +3,6 @@ package pkg
 import (
 	"bufio"
 	"database/sql"
-	"fmt"
 	"io"
 	"os"
 	"regexp"
@@ -29,8 +28,7 @@ func NewWatcher(
 	filePath string,
 	f Flags,
 ) (*Watcher, error) {
-	suffix := Hash(fmt.Sprintf("%s-%s-%s-%s-%d", f.FilePath, f.Match, f.Ignore, f.MSTeamsHook, f.Every)) + ".sqlite"
-	dbName := f.DBPath + "." + suffix
+	dbName := GetUniqDBName(f)
 	db, err := InitDB(dbName)
 	if err != nil {
 		return nil, err

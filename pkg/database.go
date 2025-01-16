@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"os"
 	"time"
@@ -27,6 +28,12 @@ func InitDB(dbName string) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func GetUniqDBName(f Flags) string {
+	suffix := Hash(fmt.Sprintf("%s-%s-%s-%s-%d", f.FilePath, f.Match, f.Ignore, f.MSTeamsHook, f.Every)) + ".sqlite"
+	dbName := f.DBPath + "." + suffix
+	return dbName
 }
 
 func DeleteDB(dbName string) error {
