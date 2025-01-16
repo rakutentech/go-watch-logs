@@ -28,7 +28,7 @@ func NewWatcher(
 	filePath string,
 	f Flags,
 ) (*Watcher, error) {
-	dbName := f.DBPath + ".sqlite"
+	dbName := GetUniqDBName(f)
 	db, err := InitDB(dbName)
 	if err != nil {
 		return nil, err
