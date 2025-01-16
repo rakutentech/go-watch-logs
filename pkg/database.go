@@ -31,7 +31,7 @@ func InitDB(dbName string) (*sql.DB, error) {
 }
 
 func GetUniqDBName(f Flags) string {
-	suffix := Hash(fmt.Sprintf("%s-%s-%s-%s-%d", f.FilePath, f.Match, f.Ignore, f.MSTeamsHook, f.Every)) + ".sqlite"
+	suffix := Hash(fmt.Sprintf("%s-%s-%s-%d", f.FilePath, f.Match, f.Ignore, f.Every)) + ".sqlite"
 	dbName := f.DBPath + "." + suffix
 	return dbName
 }
