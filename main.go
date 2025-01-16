@@ -153,6 +153,9 @@ func sendHealthCheck() {
 }
 
 func validate() {
+	if f.Test {
+		return
+	}
 	if f.FilePath == "" {
 		slog.Error("file-path is required")
 		os.Exit(1)
