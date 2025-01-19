@@ -23,7 +23,7 @@ type Watcher struct {
 	lastLineNum     int
 	lastFileSize    int64
 	timestampNow    string
-	streak          int // Number of error counts to maintain
+	streak          int
 }
 
 const (

@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/jasonlvhit/gocron"
 	"github.com/patrickmn/go-cache"
@@ -70,11 +71,9 @@ func syncCaches() {
 }
 
 func startCron() {
-	if f.LogLevel == pkg.AppLogLevelDebug {
-		if err := gocron.Every(1).Second().Do(pkg.PrintMemUsage, &f); err != nil {
-			slog.Error("Error scheduling memory usage", "error", err.Error())
-			return
-		}
+	if err := gocron.Every(1).Second().Do(pkg.PrintMemUsage, &f); err != nil {
+		slog.Error("Error scheduling memory usage", "error", err.Error())
+		return
 	}
 
 	if err := gocron.Every(f.Every).Second().Do(cronWatch); err != nil {
@@ -94,6 +93,8 @@ func cronWatch() {
 
 	for _, filePath := range filePaths {
 		watch(filePath)
+		slog.Info("Sleeping before watching next file", "seconds", 5)
+		time.Sleep(5 * time.Second)
 	}
 }
 
