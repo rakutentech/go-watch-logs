@@ -102,9 +102,9 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
 
 ```sh
 $ go test -bench=. ./... -benchmem
-BenchmarkReadFileAndMatchErrors-10    	     969	   1173870 ns/op	   12920 B/op	     146 allocs/op
-BenchmarkLoadAndSaveState-10          	    5296	    230536 ns/op	    9179 B/op	     180 allocs/op
-BenchmarkLogRotation-10               	    1036	   1175464 ns/op	   12930 B/op	     146 allocs/op
+BenchmarkReadFileAndMatchErrors-10    	   13588	     91900 ns/op	    8243 B/op	      43 allocs/op
+BenchmarkLoadAndSaveState-10          	 3135621	     375.3 ns/op	     352 B/op	       8 allocs/op
+BenchmarkLogRotation-10               	   13807	    101088 ns/op	    8243 B/op	      43 allocs/op
 ```
 
 ## Development Notes

@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,12 +28,13 @@ func TestNewWatcher(t *testing.T) {
 	ignorePattern := "ignore" // nolint: goconst
 
 	f := Flags{
-		DBPath: "test",
 		Match:  matchPattern,
 		Ignore: ignorePattern,
 	}
 
-	watcher, err := NewWatcher(filePath, f)
+	caches := make(map[string]*cache.Cache)
+	caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
+	watcher, err := NewWatcher(filePath, f, caches[filePath])
 	assert.NoError(t, err)
 	assert.NotNil(t, watcher)
 
@@ -53,12 +55,13 @@ error:1`
 	ignorePattern := `ignore` // nolint: goconst
 
 	f := Flags{
-		DBPath: "test",
 		Match:  matchPattern,
 		Ignore: ignorePattern,
 	}
 
-	watcher, err := NewWatcher(filePath, f)
+	caches := make(map[string]*cache.Cache)
+	caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
+	watcher, err := NewWatcher(filePath, f, caches[filePath])
 	assert.NoError(t, err)
 	defer watcher.Close()
 
@@ -81,12 +84,13 @@ line2`
 	ignorePattern := `ignore` // nolint: goconst
 
 	f := Flags{
-		DBPath: "test",
 		Match:  matchPattern,
 		Ignore: ignorePattern,
 	}
 
-	watcher, err := NewWatcher(filePath, f)
+	caches := make(map[string]*cache.Cache)
+	caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
+	watcher, err := NewWatcher(filePath, f, caches[filePath])
 	assert.NoError(t, err)
 	defer watcher.Close()
 
@@ -123,12 +127,13 @@ error:1`
 	ignorePattern := `ignore`
 
 	f := Flags{
-		DBPath: "test",
 		Match:  matchPattern,
 		Ignore: ignorePattern,
 	}
 
-	watcher, err := NewWatcher(filePath, f)
+	caches := make(map[string]*cache.Cache)
+	caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
+	watcher, err := NewWatcher(filePath, f, caches[filePath])
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -143,18 +148,18 @@ error:1`
 }
 
 func BenchmarkLoadAndSaveState(b *testing.B) {
-	dbName := "test.db"
 	filePath := "test.log"
 	matchPattern := "error:1"
 	ignorePattern := "ignore"
 
 	f := Flags{
-		DBPath: dbName,
 		Match:  matchPattern,
 		Ignore: ignorePattern,
 	}
 
-	watcher, err := NewWatcher(filePath, f)
+	caches := make(map[string]*cache.Cache)
+	caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
+	watcher, err := NewWatcher(filePath, f, caches[filePath])
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -163,7 +168,9 @@ func BenchmarkLoadAndSaveState(b *testing.B) {
 	watcher.lastLineNum = 10
 
 	for i := 0; i < b.N; i++ {
-		_, err := NewWatcher(filePath, f)
+		caches := make(map[string]*cache.Cache)
+		caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
+		_, err := NewWatcher(filePath, f, caches[filePath])
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -184,12 +191,13 @@ line2`
 	ignorePattern := `ignore`
 
 	f := Flags{
-		DBPath: "test",
 		Match:  matchPattern,
 		Ignore: ignorePattern,
 	}
 
-	watcher, err := NewWatcher(filePath, f)
+	caches := make(map[string]*cache.Cache)
+	caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
+	watcher, err := NewWatcher(filePath, f, caches[filePath])
 	if err != nil {
 		b.Fatal(err)
 	}

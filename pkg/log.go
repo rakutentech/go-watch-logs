@@ -11,6 +11,10 @@ import (
 	"github.com/natefinch/lumberjack"
 )
 
+const (
+	AppLogLevelDebug = -4
+)
+
 // GlobalHandler is a custom handler that catches all logs
 type GlobalHandler struct {
 	next        slog.Handler

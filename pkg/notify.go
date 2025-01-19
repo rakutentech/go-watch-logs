@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	gmt "github.com/kevincobain2000/go-msteams/src"
 )
@@ -41,71 +42,6 @@ func NotifyOwnError(e error, r slog.Record, msTeamsHook, proxy string) {
 
 func Notify(result *ScanResult, f Flags, version string) {
 	slog.Info("Sending to MS Teams")
-	details := GetAlertDetails(&f, version, result)
-
-	var logDetails []interface{} // nolint: prealloc
-	for _, detail := range details {
-		logDetails = append(logDetails, detail.Label, detail.Message)
-	}
-
-	if f.MSTeamsHook == "" {
-		slog.Warn("MS Teams hook not set")
-		return
-	}
-	slog.Info("Sending Alert Notify", logDetails...)
-
-	hostname, _ := os.Hostname()
-
-	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
-	if err != nil {
-		slog.Error("Error sending to Teams", "error", err.Error())
-	} else {
-		slog.Info("Successfully sent to MS Teams")
-	}
-}
-
-func GetHealthCheckDetails(f *Flags, version string) []gmt.Details {
-	return []gmt.Details{
-		{
-			Label:   "Health Check",
-			Message: "All OK, go-watch-logs is running actively.",
-		},
-		{
-			Label:   "Next Ping",
-			Message: fmt.Sprintf("%d secs", f.HealthCheckEvery),
-		},
-		{
-			Label:   "Version",
-			Message: version,
-		},
-		{
-			Label:   "File Path Pattern",
-			Message: f.FilePath,
-		},
-		{
-			Label:   "File Path Cap",
-			Message: fmt.Sprintf("%d", f.FilePathsCap),
-		},
-		{
-			Label:   "Match Pattern",
-			Message: f.Match,
-		},
-		{
-			Label:   "Ignore Pattern",
-			Message: f.Ignore,
-		},
-		{
-			Label:   "Min Errors Threshold",
-			Message: fmt.Sprintf("%d", f.Min),
-		},
-		{
-			Label:   "Monitoring Every",
-			Message: fmt.Sprintf("%d secs", f.Every),
-		},
-	}
-}
-
-func GetAlertDetails(f *Flags, version string, result *ScanResult) []gmt.Details {
 	details := []gmt.Details{
 		{
 			Label:   "go-watch-log version",
@@ -128,18 +64,6 @@ func GetAlertDetails(f *Flags, version string, result *ScanResult) []gmt.Details
 			Message: f.Ignore,
 		},
 		{
-			Label:   "Min Errors Threshold",
-			Message: fmt.Sprintf("%d", f.Min),
-		},
-		{
-			Label:   "Lines Read",
-			Message: fmt.Sprintf("%d", result.LinesRead),
-		},
-		{
-			Label:   "Total Errors Found",
-			Message: fmt.Sprintf("%d (%.2f)", result.ErrorCount, result.ErrorPercent) + "%",
-		},
-		{
 			Label:   "First Line",
 			Message: Truncate(result.FirstLine, TruncateMax),
 		},
@@ -151,12 +75,61 @@ func GetAlertDetails(f *Flags, version string, result *ScanResult) []gmt.Details
 			Label:   "Last Line",
 			Message: Truncate(result.LastLine, TruncateMax),
 		},
+		{
+			Label: "Details",
+			Message: fmt.Sprintf(
+				"Min Threshold: %d, Lines Read: %d\n\rMatches Found: %d, Ratio %.2f%%",
+				f.Min,
+				result.LinesRead,
+				result.ErrorCount,
+				result.ErrorPercent,
+			),
+		},
+		{
+			Label:   fmt.Sprintf("Streaks (Max %d)", f.Streak),
+			Message: StreakSymbols(result.Streak, f.Streak, f.Min),
+		},
 	}
 	if result.FirstDate != "" || result.LastDate != "" {
+		var duration string
+		if result.FirstDate != "" && result.LastDate != "" {
+			firstDate, err := time.Parse("2006-01-02 15:04:05", result.FirstDate)
+			if err != nil {
+				duration = "X"
+			} else {
+				lastDate, err := time.Parse("2006-01-02 15:04:05", result.LastDate)
+				if err == nil {
+					duration = lastDate.Sub(firstDate).String()
+				} else {
+					duration = "X"
+				}
+			}
+		}
+
 		details = append(details, gmt.Details{
-			Label:   "Time Range",
-			Message: fmt.Sprintf("%s to %s", result.FirstDate, result.LastDate),
+			Label:   "Range",
+			Message: fmt.Sprintf("%s to %s (Duration: %s)", result.FirstDate, result.LastDate, duration),
 		})
 	}
-	return details
+
+	var logDetails []interface{} // nolint: prealloc
+	for _, detail := range details {
+		logDetails = append(logDetails, detail.Label, detail.Message)
+	}
+
+	slog.Info("Sending Alert Notify", logDetails...)
+
+	hostname, _ := os.Hostname()
+
+	if f.MSTeamsHook == "" {
+		slog.Warn("MS Teams hook not set")
+		return
+	}
+
+	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
+	if err != nil {
+		slog.Error("Error sending to Teams", "error", err.Error())
+	} else {
+		slog.Info("Successfully sent to MS Teams")
+	}
 }
