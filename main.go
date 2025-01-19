@@ -99,7 +99,7 @@ func cronWatch() {
 
 func syncFilePaths() {
 	slog.Info("Syncing files")
-	var err error
+
 	fpCrawled, err := pkg.FilesByPattern(f.FilePath, f.FileRecentSecs)
 	if err != nil {
 		slog.Error("Error finding files", "error", err.Error())
@@ -111,24 +111,25 @@ func syncFilePaths() {
 		return
 	}
 
+	// Filter and cap file paths
 	filePathsMutex.Lock()
-	fpCrawled = pkg.Capped(f.FilePathsCap, fpCrawled)
+	defer filePathsMutex.Unlock()
 
-	fpFiltered := make([]string, 0, len(fpCrawled))
+	filePaths = filterTextFiles(pkg.Capped(f.FilePathsCap, fpCrawled))
 
-	for _, filePath := range fpCrawled {
-		isText, err := pkg.IsTextFile(filePath)
-		if err != nil || !isText {
-			continue
-		}
-		fpFiltered = append(fpFiltered, filePath)
-	}
-	filePaths = fpFiltered
-
-	filePathsMutex.Unlock()
 	syncCaches()
-	slog.Info("Files found", "count", len(filePaths))
-	slog.Info("Caches set", "count", len(caches))
+	slog.Info("Files synced", "fileCount", len(filePaths), "cacheCount", len(caches))
+}
+
+// filterTextFiles filters file paths to include only text files.
+func filterTextFiles(paths []string) []string {
+	filtered := make([]string, 0, len(paths))
+	for _, path := range paths {
+		if isText, err := pkg.IsTextFile(path); err == nil && isText {
+			filtered = append(filtered, path)
+		}
+	}
+	return filtered
 }
 
 func validate() {
@@ -137,7 +138,7 @@ func validate() {
 	}
 	if f.FilePath == "" {
 		slog.Error("file-path is required")
-		os.Exit(1)
+		return
 	}
 }
 
@@ -174,8 +175,8 @@ func reportResult(result *pkg.ScanResult) {
 	slog.Info("History", "max streak", f.Streak, "current streaks", result.Streak, "symbols", pkg.StreakSymbols(result.Streak, f.Streak, f.Min))
 	slog.Info("Scan", "count", result.ScanCount)
 
-	// is first scan, cache isn't ready, so skip the notification
-	if result.ScanCount == 1 {
+	if result.IsFirstScan() {
+		slog.Info("First scan, skipping notification")
 		return
 	}
 

@@ -10,6 +10,7 @@ import (
 )
 
 func NotifyOwnError(e error, r slog.Record, msTeamsHook, proxy string) {
+	slog.Info("Sending own error to MS Teams")
 	hostname, _ := os.Hostname()
 	details := []gmt.Details{
 		{
@@ -41,7 +42,7 @@ func NotifyOwnError(e error, r slog.Record, msTeamsHook, proxy string) {
 }
 
 func Notify(result *ScanResult, f Flags, version string) {
-	slog.Info("Sending to MS Teams")
+	slog.Info("Sending scan results to MS Teams")
 	details := []gmt.Details{
 		{
 			Label:   "go-watch-log version",

@@ -72,6 +72,10 @@ type ScanResult struct {
 	ScanCount    int   // Total number of scans performed
 }
 
+func (r *ScanResult) IsFirstScan() bool {
+	return r.ScanCount == 1
+}
+
 func (w *Watcher) Scan() (*ScanResult, error) {
 	matchCounts := 0
 	firstLine := ""

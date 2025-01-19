@@ -57,39 +57,43 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
 ## Help
 
 ```sh
-  -db-path string
-    	path to store db file (default "/Users/pulkit.kathuria/.go-watch-logs.db")
   -every uint
     	run every n seconds (0 to run once)
   -f string
-    	(short for --file-path) full path to the log file
+    	(short for --file-path) full path to the file to watch
   -file-path string
-    	full path to the log file
+    	full path to the file to watch
   -file-paths-cap int
     	max number of file paths to watch (default 100)
-  -health-check-every uint
-    	run health check every n seconds (0 to disable)
+  -file-recent-secs uint
+    	only files modified in the last n seconds, 0 to disable (default 86400)
   -ignore string
     	regex for ignoring errors (empty to ignore none)
+  -log-file string
+    	full path to output log file. Empty will log to stdout
   -log-level int
     	log level (0=info, -4=debug, 4=warn, 8=error)
   -match string
     	regex for matching errors (empty to match all lines)
+  -mbf int
+    	max buffer in MB, default is 0 (not provided) for go's default 64KB
   -mem-limit int
-    	memory limit in MB (0 to disable) (default 100)
+    	memory limit in MB (0 to disable) (default 128)
   -min int
     	on minimum num of matches, it should notify (default 1)
   -ms-teams-hook string
     	ms teams webhook
-  -post-min string
+  -post-cmd string
     	run this shell command after every scan when min errors are found
   -proxy string
     	http proxy for webhooks
+  -streak int
+    	on minimum num of streak matches, it should notify (default 1)
   -test
     	Quickly test paths or regex
-        # will test if the input matches the regex
+    	# will test if the input matches the regex
     	echo test123 | go-watch-logs --match=123 --test
-        # will test if the file paths are found and list them
+    	# will test if the file paths are found and list them
     	go-watch-logs --file-path=./ssl_access.*log --test
 
   -version
