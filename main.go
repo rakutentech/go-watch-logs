@@ -23,6 +23,8 @@ var filePathsMutex sync.Mutex
 var cacheMutex sync.Mutex
 var caches = make(map[string]*cache.Cache)
 
+const SafeSleepSeconds = 5
+
 func main() {
 	pkg.Parseflags(&f)
 	pkg.SetupLoggingStdout(f) // nolint: errcheck
@@ -85,6 +87,7 @@ func startCron() {
 
 func cronWatch() {
 	syncFilePaths()
+
 	filePathsMutex.Lock()
 	defer filePathsMutex.Unlock()
 
@@ -93,8 +96,10 @@ func cronWatch() {
 
 	for _, filePath := range filePaths {
 		watch(filePath)
-		slog.Info("Sleeping before watching next file", "seconds", 5)
-		time.Sleep(5 * time.Second)
+		if f.Every >= SafeSleepSeconds*2 {
+			slog.Info("Sleeping before watching next file", "seconds", 5)
+			time.Sleep(SafeSleepSeconds * time.Second)
+		}
 	}
 }
 

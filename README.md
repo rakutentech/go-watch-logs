@@ -129,4 +129,5 @@ go test ./...
 - **v1.0.12** Stable
 - **v1.0.13** Performance improvements via singletons
 - **v1.0.19** Global slog handler and notifier on own alerts
+- **v1.1.0** Uses in memory state for faster performance, streaks added
 
