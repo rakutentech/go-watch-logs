@@ -41,6 +41,9 @@ func BToMb(b uint64) uint64 {
 }
 
 func ExecShell(command string) (string, error) {
+	if command == "" {
+		return "", nil
+	}
 	cmd := exec.Command("sh", "-c", command)
 	out, err := cmd.CombinedOutput()
 	return string(out), err

@@ -33,7 +33,7 @@ func IsTextFile(filename string) (bool, error) {
 	return utf8.Valid(buffer[:n]), nil
 }
 
-func FilesByPattern(pattern string, onlyRecent bool) ([]string, error) {
+func FilesByPattern(pattern string, withinSeconds uint64) ([]string, error) {
 	// Check if the pattern is a directory
 	info, err := os.Stat(pattern)
 	if err == nil && info.IsDir() {
@@ -61,14 +61,14 @@ func FilesByPattern(pattern string, onlyRecent bool) ([]string, error) {
 	}
 
 	// only return files that are recently modified
-	if onlyRecent {
+	if withinSeconds > 0 {
 		var recentFiles []string
 		for _, file := range files {
 			info, err := os.Stat(file)
 			if err != nil {
 				continue
 			}
-			if IsRecentlyModified(info, 86400) {
+			if IsRecentlyModified(info, withinSeconds) {
 				recentFiles = append(recentFiles, file)
 			}
 		}
@@ -85,7 +85,7 @@ func GetHomedir() string {
 	return home
 }
 
-func IsRecentlyModified(fileInfo os.FileInfo, within uint64) bool {
+func IsRecentlyModified(fileInfo os.FileInfo, withinSeconds uint64) bool {
 	// Get the current time
 	now := time.Now()
 
@@ -93,7 +93,7 @@ func IsRecentlyModified(fileInfo os.FileInfo, within uint64) bool {
 	modTime := fileInfo.ModTime()
 
 	// Add a 1-hour buffer (3600 seconds) to the "within" duration
-	adjustedWithin := within + 3600
+	adjustedWithin := withinSeconds + 3600
 
 	// Ensure that adjustedWithin is within the bounds of int64
 	if adjustedWithin > math.MaxInt64 {

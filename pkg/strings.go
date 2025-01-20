@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"github.com/gravwell/gravwell/v3/timegrinder"
@@ -64,4 +65,28 @@ func SearchDate(input string) string {
 		return ""
 	}
 	return ts.Format("2006-01-02 15:04:05")
+}
+func DisplayableStreakNumber(streak int) int {
+	l := streak * 2
+	if l < 10 {
+		return 10
+	}
+	return l
+}
+
+func StreakSymbols(arr []int, length int, minimum int) string {
+	var symbols []string
+	for _, v := range arr {
+		if v >= minimum {
+			symbols = append(symbols, "✕")
+		} else {
+			symbols = append(symbols, "✓")
+		}
+	}
+	// Fill the rest with grey symbols based on streak length
+	for i := len(symbols); i < DisplayableStreakNumber(length); i++ {
+		symbols = append([]string{"□"}, symbols...)
+	}
+
+	return strings.Join(symbols, " ")
 }

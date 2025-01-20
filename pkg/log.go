@@ -11,6 +11,11 @@ import (
 	"github.com/natefinch/lumberjack"
 )
 
+const (
+	AppLogLevelDebug = -4
+	SlogErrorLabel   = "ERROR"
+)
+
 // GlobalHandler is a custom handler that catches all logs
 type GlobalHandler struct {
 	next        slog.Handler
@@ -19,7 +24,7 @@ type GlobalHandler struct {
 }
 
 func (h *GlobalHandler) Handle(ctx context.Context, r slog.Record) error {
-	if r.Level.String() == "ERROR" {
+	if r.Level.String() == SlogErrorLabel {
 		err := fmt.Errorf("global log capture - Level: %s, Message: %s", r.Level.String(), r.Message)
 		NotifyOwnError(err, r, h.msTeamsHook, h.proxy)
 	}
