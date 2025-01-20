@@ -35,7 +35,8 @@ func NotifyOwnError(e error, r slog.Record, msTeamsHook, proxy string) {
 	}
 	err := gmt.Send(hostname, details, msTeamsHook, proxy)
 	if err != nil {
-		slog.Error("Error sending to Teams", "error", err.Error())
+		// keep it warn to prevent infinite loop from the global handler of slog
+		slog.Warn("Error sending to Teams", "error", err.Error())
 	} else {
 		slog.Info("Successfully sent own error to MS Teams")
 	}
@@ -129,7 +130,8 @@ func Notify(result *ScanResult, f Flags, version string) {
 
 	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
 	if err != nil {
-		slog.Error("Error sending to Teams", "error", err.Error())
+		// keep it warn to prevent infinite loop from the global handler of slog
+		slog.Warn("Error sending to Teams", "error", err.Error())
 	} else {
 		slog.Info("Successfully sent to MS Teams")
 	}
