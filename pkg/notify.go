@@ -87,8 +87,8 @@ func Notify(result *ScanResult, f Flags, version string) {
 			),
 		},
 		{
-			Label:   fmt.Sprintf("Streaks (Max %d)", f.Streak),
-			Message: StreakSymbols(result.Streak, f.Streak, f.Min),
+			Label:   "Streaks",
+			Message: StreakSymbols(result.Streak, f.Streak, f.Min) + "\n\r" + fmt.Sprintf("Last %d failed. Scan counter: %d", f.Streak, result.ScanCount),
 		},
 	}
 	if result.FirstDate != "" || result.LastDate != "" {
