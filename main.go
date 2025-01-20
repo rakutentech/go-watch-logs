@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/jasonlvhit/gocron"
 	"github.com/patrickmn/go-cache"
@@ -22,8 +21,6 @@ var filePathsMutex sync.Mutex
 
 var cacheMutex sync.Mutex
 var caches = make(map[string]*cache.Cache)
-
-const SafeSleepSeconds = 5
 
 func main() {
 	pkg.Parseflags(&f)
@@ -96,10 +93,6 @@ func cronWatch() {
 
 	for _, filePath := range filePaths {
 		watch(filePath)
-		if f.Every >= SafeSleepSeconds*2 {
-			slog.Info("Sleeping before watching next file", "seconds", 5)
-			time.Sleep(SafeSleepSeconds * time.Second)
-		}
 	}
 }
 
