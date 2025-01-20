@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"log/slog"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -87,6 +88,26 @@ func StreakSymbols(arr []int, length int, minimum int) string {
 	for i := len(symbols); i < DisplayableStreakNumber(length); i++ {
 		symbols = append([]string{"□"}, symbols...)
 	}
+	// if last is ✕ then replace with ✖(bold)
+	if symbols[len(symbols)-1] == "✕" {
+		symbols[len(symbols)-1] = "✖"
+	}
 
-	return strings.Join(symbols, " ")
+	return strings.Join(symbols, "")
+}
+
+func NumberToK(num int) string {
+	if num >= 1000 {
+		return strconv.FormatFloat(float64(num)/1000, 'f', 1, 64) + "K"
+	}
+	return strconv.Itoa(num)
+}
+
+// reduce to n lines
+func ReduceToNLines(s string, n int) string {
+	lines := strings.Split(s, "\n")
+	if len(lines) <= n {
+		return s
+	}
+	return strings.Join(lines[:n], "\n")
 }

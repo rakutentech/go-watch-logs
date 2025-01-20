@@ -35,7 +35,8 @@ func NotifyOwnError(e error, r slog.Record, msTeamsHook, proxy string) {
 	}
 	err := gmt.Send(hostname, details, msTeamsHook, proxy)
 	if err != nil {
-		slog.Error("Error sending to Teams", "error", err.Error())
+		// keep it warn to prevent infinite loop from the global handler of slog
+		slog.Warn("Error sending to Teams", "error", err.Error())
 	} else {
 		slog.Info("Successfully sent own error to MS Teams")
 	}
@@ -49,46 +50,48 @@ func Notify(result *ScanResult, f Flags, version string) {
 			Message: version,
 		},
 		{
-			Label:   "File Path",
+			Label:   "File",
 			Message: result.FilePath,
 		},
 		{
-			Label:   "Running Every",
-			Message: fmt.Sprintf("%d secs", f.Every),
-		},
-		{
-			Label:   "Match Pattern",
+			Label:   "Match",
 			Message: f.Match,
 		},
 		{
-			Label:   "Ignore Pattern",
+			Label:   "Ignore",
 			Message: f.Ignore,
 		},
 		{
-			Label:   "First Line",
-			Message: Truncate(result.FirstLine, TruncateMax),
-		},
-		{
-			Label:   "Mid Lines",
-			Message: result.PreviewLine,
-		},
-		{
-			Label:   "Last Line",
-			Message: Truncate(result.LastLine, TruncateMax),
-		},
-		{
-			Label: "Details",
+			Label: "Lines",
 			Message: fmt.Sprintf(
-				"Min Threshold: %d, Lines Read: %d\n\rMatches Found: %d, Ratio %.2f%%",
+				"%s\n\r%s\n\r%s",
+				Truncate(result.FirstLine, TruncateMax),
+				ReduceToNLines(result.PreviewLine, 3),
+				Truncate(result.LastLine, TruncateMax),
+			),
+		},
+		{
+			Label: "Settings",
+			Message: fmt.Sprintf(
+				"min (%d), every (%d secs), max streak (%d)",
 				f.Min,
-				result.LinesRead,
-				result.ErrorCount,
+				f.Every,
+				f.Streak,
+			),
+		},
+		{
+			Label: "Scan Details",
+			Message: fmt.Sprintf(
+				"lines read (%s), %.2f%% errors (%s), scans til date (%s)",
+				NumberToK(result.LinesRead),
 				result.ErrorPercent,
+				NumberToK(result.ErrorCount),
+				NumberToK(result.ScanCount),
 			),
 		},
 		{
 			Label:   "Streaks",
-			Message: StreakSymbols(result.Streak, f.Streak, f.Min) + "\n\r" + fmt.Sprintf("Last %d failed. Scan counter: %d", f.Streak, result.ScanCount),
+			Message: StreakSymbols(result.Streak, f.Streak, f.Min),
 		},
 	}
 	if result.FirstDate != "" || result.LastDate != "" {
@@ -96,20 +99,20 @@ func Notify(result *ScanResult, f Flags, version string) {
 		if result.FirstDate != "" && result.LastDate != "" {
 			firstDate, err := time.Parse("2006-01-02 15:04:05", result.FirstDate)
 			if err != nil {
-				duration = "X"
+				duration = ""
 			} else {
 				lastDate, err := time.Parse("2006-01-02 15:04:05", result.LastDate)
 				if err == nil {
-					duration = lastDate.Sub(firstDate).String()
+					duration = fmt.Sprintf("(%s)", lastDate.Sub(firstDate).String())
 				} else {
-					duration = "X"
+					duration = ""
 				}
 			}
 		}
 
 		details = append(details, gmt.Details{
 			Label:   "Range",
-			Message: fmt.Sprintf("%s to %s (Duration: %s)", result.FirstDate, result.LastDate, duration),
+			Message: fmt.Sprintf("%s to %s %s", result.FirstDate, result.LastDate, duration),
 		})
 	}
 
@@ -129,7 +132,8 @@ func Notify(result *ScanResult, f Flags, version string) {
 
 	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
 	if err != nil {
-		slog.Error("Error sending to Teams", "error", err.Error())
+		// keep it warn to prevent infinite loop from the global handler of slog
+		slog.Warn("Error sending to Teams", "error", err.Error())
 	} else {
 		slog.Info("Successfully sent to MS Teams")
 	}

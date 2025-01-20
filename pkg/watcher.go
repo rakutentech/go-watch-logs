@@ -117,6 +117,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	currentLineNum := 1
 	linesRead := 0
 	bytesRead := w.lastFileSize
+	isFirstScan := w.getScanCount() == 0
 
 	for scanner.Scan() {
 		line := scanner.Bytes()
@@ -126,6 +127,10 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		// Convert to positive number
 		if linesRead < 0 {
 			linesRead = -linesRead
+		}
+
+		if isFirstScan {
+			continue
 		}
 
 		if w.ignorePattern != "" && regIgnore.Match(line) {
