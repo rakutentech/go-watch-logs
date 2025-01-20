@@ -26,10 +26,6 @@ type Watcher struct {
 	streak          int
 }
 
-const (
-	StreakMultiplier = 2
-)
-
 func NewWatcher(
 	filePath string,
 	f Flags,
@@ -48,7 +44,7 @@ func NewWatcher(
 		scanCountKey:    "sc-" + filePath,
 		timestampNow:    now.Format("2006-01-02 15:04:05"),
 		maxBufferMB:     f.MaxBufferMB,
-		streak:          f.Streak * StreakMultiplier,
+		streak:          DisplayableStreakNumber(f.Streak),
 	}
 	if err := watcher.loadState(); err != nil {
 		return nil, err
