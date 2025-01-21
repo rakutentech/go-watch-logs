@@ -88,9 +88,11 @@ func StreakSymbols(arr []int, length int, minimum int) string {
 	for i := len(symbols); i < DisplayableStreakNumber(length); i++ {
 		symbols = append([]string{"□"}, symbols...)
 	}
-	// if last is ✕ then replace with ✖(bold)
-	if symbols[len(symbols)-1] == "✕" {
-		symbols[len(symbols)-1] = "✖"
+	// Replace the last N characters with ✖, where N is the length
+	for i := 0; i < length && i < len(symbols); i++ {
+		if symbols[len(symbols)-1-i] == "✕" {
+			symbols[len(symbols)-1-i] = "✖"
+		}
 	}
 
 	return strings.Join(symbols, "")
