@@ -21,3 +21,26 @@ func NonStreakZero(streaks []int, streak int, minimum int) bool {
 	}
 	return true
 }
+
+func UniqueStrings(input []string) []string {
+	uniqueMap := make(map[string]struct{})
+	for _, str := range input {
+		uniqueMap[str] = struct{}{}
+	}
+	uniqueList := make([]string, 0, len(uniqueMap))
+	for str := range uniqueMap {
+		uniqueList = append(uniqueList, str)
+	}
+	return uniqueList
+}
+
+func ToCSV(input []string) string {
+	result := ""
+	for i, str := range input {
+		if i > 0 {
+			result += ", "
+		}
+		result += str
+	}
+	return result
+}
