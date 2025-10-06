@@ -1,3 +1,4 @@
+// nolint:dupl,gosec,goconst
 package pkg
 
 import (
@@ -302,11 +303,11 @@ func TestLookupMultipleIPs(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		ips            []string
-		expectedCount  int
-		checkResults   bool
-		expectedCodes  []string
+		name          string
+		ips           []string
+		expectedCount int
+		checkResults  bool
+		expectedCodes []string
 	}{
 		{
 			name:          "single valid IP",

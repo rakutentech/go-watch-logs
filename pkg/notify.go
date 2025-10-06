@@ -120,7 +120,7 @@ func Notify(result *ScanResult, f Flags, version string) {
 		})
 	}
 
-	var logDetails []any
+	var logDetails []any // nolint: prealloc
 	for _, detail := range details {
 		logDetails = append(logDetails, detail.Label, detail.Message)
 	}
