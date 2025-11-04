@@ -67,6 +67,7 @@ func SearchDate(input string) string {
 	}
 	return ts.Format("2006-01-02 15:04:05")
 }
+
 func DisplayableStreakNumber(streak int) int {
 	l := streak * 2
 	if l < 10 {

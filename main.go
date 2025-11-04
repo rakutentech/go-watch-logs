@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"log/slog"
 	"os"
@@ -22,9 +23,22 @@ var filePathsMutex sync.Mutex
 var cacheMutex sync.Mutex
 var caches = make(map[string]*cache.Cache)
 
+//go:embed geoip.csv
+var geoipCSV string
+
+var geoIPDB *pkg.GeoIPDatabase
+
 func main() {
 	pkg.Parseflags(&f)
 	pkg.SetupLoggingStdout(f) // nolint: errcheck
+
+	// Initialize GeoIP database
+	var err error
+	geoIPDB, err = pkg.ParseGeoIPCSV(geoipCSV)
+	if err != nil {
+		slog.Error("Failed to parse GeoIP database", "error", err.Error())
+	}
+
 	parseProxy()
 	wantsVersion()
 	validate()
@@ -142,7 +156,7 @@ func validate() {
 }
 
 func watch(filePath string) {
-	watcher, err := pkg.NewWatcher(filePath, f, caches[filePath])
+	watcher, err := pkg.NewWatcher(filePath, f, caches[filePath], geoIPDB)
 
 	if err != nil {
 		slog.Error("Error creating watcher", "error", err.Error(), "filePath", filePath)
@@ -169,9 +183,11 @@ func reportResult(result *pkg.ScanResult) {
 	slog.Info("Scanning complete", "filePath", result.FilePath)
 	slog.Info("1st line", "date", result.FirstDate, "line", pkg.Truncate(result.FirstLine, pkg.TruncateMax))
 	slog.Info("Preview line", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
+
 	slog.Info("Last line", "date", result.LastDate, "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
 	slog.Info("Error count", "percent", fmt.Sprintf("%d (%.2f)", result.ErrorCount, result.ErrorPercent)+"%")
 	slog.Info("History", "max streak", f.Streak, "current streaks", result.Streak, "symbols", pkg.StreakSymbols(result.Streak, f.Streak, f.Min))
+	slog.Info("Countries", "counts", fmt.Sprintf("%d, %v", len(result.CountryCounts), result.CountryCounts))
 	slog.Info("Scan", "count", result.ScanCount)
 
 	if result.IsFirstScan() {

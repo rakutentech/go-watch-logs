@@ -13,6 +13,7 @@ import (
 type Watcher struct {
 	cache           *cache.Cache
 	filePath        string
+	geoIPDB         *GeoIPDatabase
 	lastLineKey     string
 	lastFileSizeKey string
 	errorHistoryKey string
@@ -26,16 +27,22 @@ type Watcher struct {
 	streak          int
 }
 
+const limitCountryCount = 25
+
+const previewLineMaxLength = 500
+
 func NewWatcher(
 	filePath string,
 	f Flags,
 	c *cache.Cache,
+	geoIPDB *GeoIPDatabase,
 ) (*Watcher, error) {
 	now := time.Now()
 
 	watcher := &Watcher{
 		cache:           c,
 		filePath:        filePath,
+		geoIPDB:         geoIPDB,
 		matchPattern:    f.Match,
 		ignorePattern:   f.Ignore,
 		lastLineKey:     "lk-" + filePath,
@@ -54,18 +61,19 @@ func NewWatcher(
 }
 
 type ScanResult struct {
-	FilePath     string
-	FileInfo     os.FileInfo
-	ErrorCount   int
-	ErrorPercent float64
-	LinesRead    int
-	FirstLine    string
-	FirstDate    string
-	PreviewLine  string
-	LastLine     string
-	LastDate     string
-	Streak       []int // History of error counts for this file path
-	ScanCount    int   // Total number of scans performed
+	FilePath      string
+	FileInfo      os.FileInfo
+	ErrorCount    int
+	ErrorPercent  float64
+	LinesRead     int
+	FirstLine     string
+	FirstDate     string
+	CountryCounts map[string]int
+	PreviewLine   string
+	LastLine      string
+	LastDate      string
+	Streak        []int // History of error counts for this file path
+	ScanCount     int   // Total number of scans performed
 }
 
 func (r *ScanResult) IsFirstScan() bool {
@@ -118,6 +126,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	linesRead := 0
 	bytesRead := w.lastFileSize
 	isFirstScan := w.getScanCount() == 0
+	countryCounts := make(map[string]int)
 
 	for scanner.Scan() {
 		line := scanner.Bytes()
@@ -138,10 +147,18 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		}
 		if regMatch.Match(line) {
 			lineStr := string(line)
+
+			if len(countryCounts) < limitCountryCount {
+				cc := w.geoIPDB.GetCountryCounts(SearchIPAddresses(lineStr))
+				for country, count := range cc {
+					countryCounts[country] += count
+				}
+			}
+
 			if firstLine == "" {
 				firstLine = lineStr
 			}
-			if len(previewLine) < 500 {
+			if len(previewLine) < previewLineMaxLength {
 				previewLine += lineStr + "\n\r"
 			}
 			lastLine = lineStr
@@ -184,18 +201,19 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 	scanCount := w.getScanCount()
 
 	return &ScanResult{
-		ErrorCount:   matchCounts,
-		FirstDate:    SearchDate(firstLine),
-		LastDate:     SearchDate(lastLine),
-		FirstLine:    firstLine,
-		PreviewLine:  previewLine,
-		LastLine:     lastLine,
-		FilePath:     w.filePath,
-		FileInfo:     fileInfo,
-		ErrorPercent: matchPercentage,
-		LinesRead:    linesRead,
-		Streak:       errorHistory,
-		ScanCount:    scanCount,
+		ErrorCount:    matchCounts,
+		FirstDate:     SearchDate(firstLine),
+		LastDate:      SearchDate(lastLine),
+		FirstLine:     firstLine,
+		PreviewLine:   previewLine,
+		LastLine:      lastLine,
+		FilePath:      w.filePath,
+		FileInfo:      fileInfo,
+		ErrorPercent:  matchPercentage,
+		LinesRead:     linesRead,
+		Streak:        errorHistory,
+		ScanCount:     scanCount,
+		CountryCounts: countryCounts,
 	}, nil
 }
 

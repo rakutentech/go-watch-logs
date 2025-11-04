@@ -93,6 +93,10 @@ func Notify(result *ScanResult, f Flags, version string) {
 			Label:   "Streaks",
 			Message: StreakSymbols(result.Streak, f.Streak, f.Min),
 		},
+		{
+			Label:   "Countries",
+			Message: OrderedAsc(result.CountryCounts),
+		},
 	}
 	if result.FirstDate != "" || result.LastDate != "" {
 		var duration string
@@ -116,12 +120,11 @@ func Notify(result *ScanResult, f Flags, version string) {
 		})
 	}
 
-	var logDetails []interface{} // nolint: prealloc
+	var logDetails []any // nolint: prealloc
 	for _, detail := range details {
 		logDetails = append(logDetails, detail.Label, detail.Message)
 	}
-
-	slog.Info("Sending Alert Notify", logDetails...)
+	slog.Debug("Sending Alert Notify", logDetails...)
 
 	hostname, _ := os.Hostname()
 

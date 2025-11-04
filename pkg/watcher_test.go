@@ -34,7 +34,7 @@ func TestNewWatcher(t *testing.T) {
 
 	caches := make(map[string]*cache.Cache)
 	caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
-	watcher, err := NewWatcher(filePath, f, caches[filePath])
+	watcher, err := NewWatcher(filePath, f, caches[filePath], nil)
 	watcher.incrementScanCount()
 	assert.NoError(t, err)
 	assert.NotNil(t, watcher)
@@ -62,7 +62,7 @@ error:1`
 
 	caches := make(map[string]*cache.Cache)
 	caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
-	watcher, err := NewWatcher(filePath, f, caches[filePath])
+	watcher, err := NewWatcher(filePath, f, caches[filePath], nil)
 	watcher.incrementScanCount()
 	assert.NoError(t, err)
 	defer watcher.Close()
@@ -92,7 +92,7 @@ line2`
 
 	caches := make(map[string]*cache.Cache)
 	caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
-	watcher, err := NewWatcher(filePath, f, caches[filePath])
+	watcher, err := NewWatcher(filePath, f, caches[filePath], nil)
 	watcher.incrementScanCount()
 	assert.NoError(t, err)
 	defer watcher.Close()
@@ -136,7 +136,7 @@ error:1`
 
 	caches := make(map[string]*cache.Cache)
 	caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
-	watcher, err := NewWatcher(filePath, f, caches[filePath])
+	watcher, err := NewWatcher(filePath, f, caches[filePath], nil)
 	watcher.incrementScanCount()
 	if err != nil {
 		b.Fatal(err)
@@ -163,7 +163,7 @@ func BenchmarkLoadAndSaveState(b *testing.B) {
 
 	caches := make(map[string]*cache.Cache)
 	caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
-	watcher, err := NewWatcher(filePath, f, caches[filePath])
+	watcher, err := NewWatcher(filePath, f, caches[filePath], nil)
 	watcher.incrementScanCount()
 	if err != nil {
 		b.Fatal(err)
@@ -175,7 +175,7 @@ func BenchmarkLoadAndSaveState(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		caches := make(map[string]*cache.Cache)
 		caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
-		_, err := NewWatcher(filePath, f, caches[filePath])
+		_, err := NewWatcher(filePath, f, caches[filePath], nil)
 		watcher.incrementScanCount()
 		if err != nil {
 			b.Fatal(err)
@@ -203,7 +203,7 @@ line2`
 
 	caches := make(map[string]*cache.Cache)
 	caches[filePath] = cache.New(cache.NoExpiration, cache.NoExpiration)
-	watcher, err := NewWatcher(filePath, f, caches[filePath])
+	watcher, err := NewWatcher(filePath, f, caches[filePath], nil)
 	watcher.incrementScanCount()
 	if err != nil {
 		b.Fatal(err)

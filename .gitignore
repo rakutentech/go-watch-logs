@@ -27,3 +27,4 @@ go-watch-logs
 *.sqlite3
 logs/
 testdata/
+main
