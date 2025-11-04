@@ -9,7 +9,6 @@ require (
 	github.com/kevincobain2000/go-msteams v1.1.1
 	github.com/mattn/go-isatty v0.0.20
 	github.com/natefinch/lumberjack v2.0.0+incompatible
-	github.com/oschwald/geoip2-golang/v2 v2.0.0-beta.4
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/stretchr/testify v1.10.0
 )
@@ -20,7 +19,6 @@ require (
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/oschwald/maxminddb-golang/v2 v2.0.0-beta.9 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect

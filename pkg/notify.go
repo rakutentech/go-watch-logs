@@ -95,7 +95,7 @@ func Notify(result *ScanResult, f Flags, version string) {
 		},
 		{
 			Label:   "Countries",
-			Message: fmt.Sprintf("%v", result.CountryCounts),
+			Message: OrderedAsc(result.CountryCounts),
 		},
 	}
 	if result.FirstDate != "" || result.LastDate != "" {

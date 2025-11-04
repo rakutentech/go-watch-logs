@@ -27,6 +27,10 @@ type Watcher struct {
 	streak          int
 }
 
+const limitCountryCount = 25
+
+const previewLineMaxLength = 500
+
 func NewWatcher(
 	filePath string,
 	f Flags,
@@ -144,7 +148,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		if regMatch.Match(line) {
 			lineStr := string(line)
 
-			if len(countryCounts) < 50 {
+			if len(countryCounts) < limitCountryCount {
 				cc := w.geoIPDB.GetCountryCounts(SearchIPAddresses(lineStr))
 				for country, count := range cc {
 					countryCounts[country] += count
@@ -154,7 +158,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 			if firstLine == "" {
 				firstLine = lineStr
 			}
-			if len(previewLine) < 500 {
+			if len(previewLine) < previewLineMaxLength {
 				previewLine += lineStr + "\n\r"
 			}
 			lastLine = lineStr

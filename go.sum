@@ -35,10 +35,6 @@ github.com/natefinch/lumberjack v2.0.0+incompatible/go.mod h1:Wi9p2TTF5DG5oU+6Yf
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.10.1/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/gomega v1.7.0/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1CpauHY=
-github.com/oschwald/geoip2-golang/v2 v2.0.0-beta.4 h1:O5fVXaiCQ1t1284iEGPHaMSqOfjBqWig7NOD6WIQkxA=
-github.com/oschwald/geoip2-golang/v2 v2.0.0-beta.4/go.mod h1:fHGWi8nhf3ZNFPE09LPwp7p2ABZoc5XXx6VY5mIBNNw=
-github.com/oschwald/maxminddb-golang/v2 v2.0.0-beta.9 h1:Fc8OfrOEHSDsxEe2MOsNz/7Wq4MNBJczl1/B/+/5k2I=
-github.com/oschwald/maxminddb-golang/v2 v2.0.0-beta.9/go.mod h1:EkyB0XWibbE1/+tXyR+ZehlGg66bRtMzxQSPotYH2EA=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
 github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
