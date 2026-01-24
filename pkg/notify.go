@@ -45,80 +45,27 @@ func NotifyOwnError(e error, r slog.Record, msTeamsHook, proxy string) {
 	}
 }
 
-// NotifyPagerDuty sends an alert to PagerDuty Event Orchestration with the same details as MS Teams
-func NotifyPagerDuty(result *ScanResult, f Flags, hostname string, details []gmt.Details) {
-	slog.Info("Sending alert to PagerDuty")
-	
-	// Determine severity based on error count and percentage
-	severity := "error"
-
-	// Create summary from the first detail (usually the file path or hostname)
-	summary := fmt.Sprintf("Log errors detected: %d errors (%.2f%%)", 
-		result.ErrorCount, result.ErrorPercent)
-	
-	// Find file path from details for summary
-	for _, detail := range details {
-		if detail.Label == "File" {
-			summary = fmt.Sprintf("Log errors detected in %s: %d errors (%.2f%%)", 
-				detail.Message, result.ErrorCount, result.ErrorPercent)
-			break
-		}
-	}
-
-	// Convert MS Teams details to PagerDuty custom_details format
-	customDetails := make(map[string]interface{})
-	for _, detail := range details {
-		customDetails[detail.Label] = detail.Message
-	}
-
-	// Create dedup key based on file path to prevent duplicate incidents
-	dedupKey := fmt.Sprintf("go-watch-logs-%s", result.FilePath)
-
-	// Create PagerDuty EventV2 using the SDK
-	event := &eventsapi.EventV2{
-		RoutingKey: f.PagerDutyIntegrationKey,
-		Action:     "trigger",
-		DedupKey:   dedupKey,
-		Payload: eventsapi.PayloadV2{
-			Summary:       summary,
-			Source:        hostname,
-			Severity:      severity,
-			CustomDetails: customDetails,
-		},
-	}
-
-	// Create HTTP client with optional proxy
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-	if f.Proxy != "" {
-		proxyURL, err := url.Parse(f.Proxy)
-		if err != nil {
-			slog.Warn("Invalid proxy URL for PagerDuty", "proxy", f.Proxy, "error", err.Error())
-		} else {
-			transport := &http.Transport{
-				Proxy: http.ProxyURL(proxyURL),
-			}
-			client.Transport = transport
-		}
-	}
-
-	// Send event using SDK with custom HTTP client
-	response, err := eventsapi.Enqueue(event, eventsapi.WithHTTPClient(client))
-	if err != nil {
-		slog.Warn("Error sending to PagerDuty", "error", err.Error())
-		return
-	}
-
-	if response.Status == "success" {
-		slog.Info("Successfully sent alert to PagerDuty", "status", response.Status, "message", response.Message)
-	} else {
-		slog.Warn("PagerDuty returned non-success status", "status", response.Status, "message", response.Message)
-	}
+// TeamsEvent represents the event data for MS Teams
+type TeamsEvent struct {
+	Hostname string
+	Details  []gmt.Details
 }
 
-func Notify(result *ScanResult, f Flags, version string) {
-	slog.Info("Sending scan results to MS Teams")
+// PDEvent represents the event data for PagerDuty
+type PDEvent struct {
+	Event    *eventsapi.EventV2
+	HTTPClient *http.Client
+}
+
+// processLogResult processes scan results and creates events for both MS Teams and PagerDuty
+func processLogResult(result *ScanResult, f Flags, version string) (TeamsEvent, PDEvent, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		slog.Warn("Failed to get hostname", "error", err.Error())
+		hostname = "unknown"
+	}
+	
+	// Build details array (shared between Teams and PagerDuty)
 	details := []gmt.Details{
 		{
 			Label:   "go-watch-log version",
@@ -195,29 +142,129 @@ func Notify(result *ScanResult, f Flags, version string) {
 		})
 	}
 
+	// Create Teams event
+	teamsEvent := TeamsEvent{
+		Hostname: hostname,
+		Details:  details,
+	}
+
+	// Create PagerDuty event
+	var pdEvent PDEvent
+	
+	// Determine severity
+	severity := "error"
+
+	// Create summary
+	summary := fmt.Sprintf("Log errors detected in %s: %d errors (%.2f%%)", 
+		result.FilePath, result.ErrorCount, result.ErrorPercent)
+
+	// Convert MS Teams details to PagerDuty custom_details format
+	customDetails := make(map[string]interface{})
+	for _, detail := range details {
+		customDetails[detail.Label] = detail.Message
+	}
+
+	// Create dedup key based on file path to prevent duplicate incidents
+	dedupKey := fmt.Sprintf("go-watch-logs-%s", result.FilePath)
+
+	// Create PagerDuty EventV2 using the SDK
+	pdEvent.Event = &eventsapi.EventV2{
+		RoutingKey: f.PagerDutyIntegrationKey,
+		Action:     "trigger",
+		DedupKey:   dedupKey,
+		Payload: eventsapi.PayloadV2{
+			Summary:       summary,
+			Source:        hostname,
+			Severity:      severity,
+			CustomDetails: customDetails,
+		},
+	}
+
+	// Create HTTP client with optional proxy for PagerDuty
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	if f.Proxy != "" {
+		proxyURL, err := url.Parse(f.Proxy)
+		if err != nil {
+			slog.Warn("Invalid proxy URL for PagerDuty", "proxy", f.Proxy, "error", err.Error())
+		} else {
+			transport := &http.Transport{
+				Proxy: http.ProxyURL(proxyURL),
+			}
+			client.Transport = transport
+		}
+	}
+	pdEvent.HTTPClient = client
+
+	// Log details for debugging
 	var logDetails []any // nolint: prealloc
 	for _, detail := range details {
 		logDetails = append(logDetails, detail.Label, detail.Message)
 	}
 	slog.Debug("Sending Alert Notify", logDetails...)
 
-	hostname, _ := os.Hostname()
+	return teamsEvent, pdEvent, nil
+}
 
-	if f.MSTeamsHook == "" {
+// sendToTeams sends the event to MS Teams
+func sendToTeams(event TeamsEvent, msTeamsHook, proxy string) error {
+	if msTeamsHook == "" {
 		slog.Warn("MS Teams hook not set")
-		return
+		return nil
 	}
 
-	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
+	slog.Info("Sending scan results to MS Teams")
+	err := gmt.Send(event.Hostname, event.Details, msTeamsHook, proxy)
 	if err != nil {
 		// keep it warn to prevent infinite loop from the global handler of slog
 		slog.Warn("Error sending to Teams", "error", err.Error())
-	} else {
-		slog.Info("Successfully sent to MS Teams")
+		return err
+	}
+	slog.Info("Successfully sent to MS Teams")
+	return nil
+}
+
+// sendToPagerDuty sends the event to PagerDuty
+func sendToPagerDuty(event PDEvent) error {
+	if event.Event == nil {
+		return nil
 	}
 
-	// Send to PagerDuty if integration key is configured
+	slog.Info("Sending alert to PagerDuty")
+	
+	// Send event using SDK with custom HTTP client
+	response, err := eventsapi.Enqueue(event.Event, eventsapi.WithHTTPClient(event.HTTPClient))
+	if err != nil {
+		slog.Warn("Error sending to PagerDuty", "error", err.Error())
+		return err
+	}
+
+	if response.Status == "success" {
+		slog.Info("Successfully sent alert to PagerDuty", "status", response.Status, "message", response.Message)
+	} else {
+		slog.Warn("PagerDuty returned non-success status", "status", response.Status, "message", response.Message)
+	}
+	return nil
+}
+
+func Notify(result *ScanResult, f Flags, version string) {
+	// Process log results into events
+	teamsEvent, pdEvent, err := processLogResult(result, f, version)
+	if err != nil {
+		slog.Warn("Error processing log results", "error", err.Error())
+		return
+	}
+
+	// Send to MS Teams (failure won't prevent PagerDuty from being sent)
+	if err := sendToTeams(teamsEvent, f.MSTeamsHook, f.Proxy); err != nil {
+		slog.Warn("Failed to send to MS Teams", "error", err.Error())
+	}
+
+	// Send to PagerDuty if integration key is configured (independent of Teams result)
 	if f.PagerDutyIntegrationKey != "" {
-		NotifyPagerDuty(result, f, hostname, details)
+		if err := sendToPagerDuty(pdEvent); err != nil {
+			slog.Warn("Failed to send to PagerDuty", "error", err.Error())
+		}
 	}
 }
