@@ -4,6 +4,7 @@ go 1.24
 
 require (
 	github.com/MatusOllah/slogcolor v1.4.0
+	github.com/PagerDuty/go-pdagent v0.5.1
 	github.com/gravwell/gravwell/v3 v3.8.34
 	github.com/jasonlvhit/gocron v0.0.1
 	github.com/kevincobain2000/go-msteams v1.1.1
