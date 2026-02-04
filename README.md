@@ -92,7 +92,7 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
   -pagerduty-key string
     	pagerduty routing/integration key
   -pagerduty-dedupkey string
-    	pagerduty deduplication key (default: auto-generated from file path and pattern)
+    	pagerduty deduplication key
   -post-cmd string
     	run this shell command after every scan when min errors are found
   -proxy string
