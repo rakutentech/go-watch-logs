@@ -35,7 +35,7 @@ var httpClient *http.Client
 
 // setHTTPClient initializes the singleton HTTP client with timeout and proxy configuration
 func setHTTPClient() error {
-	timeout := time.Duration(5 * time.Second)
+	timeout := time.Duration(6 * time.Second)
 
 	if f.Proxy == "" {
 		httpClient = &http.Client{
@@ -47,7 +47,11 @@ func setHTTPClient() error {
 	if err != nil {
 		return err
 	}
-	httpClient.Transport = &http.Transport{Proxy: http.ProxyURL(proxy)}
+	transport := &http.Transport{Proxy: http.ProxyURL(proxy)}
+	httpClient = &http.Client{
+		Transport: transport,
+		Timeout:   timeout,
+	}
 	return nil
 }
 
@@ -56,10 +60,6 @@ func main() {
 
 	// Initialize proxy and HTTP client before logging setup
 	parseProxy()
-	if err := setHTTPClient(); err != nil {
-		slog.Error("Failed to set HTTP client", "error", err.Error())
-		return
-	}
 
 	pkg.SetupLoggingStdout(f, httpClient) // nolint: errcheck
 
