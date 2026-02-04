@@ -4,8 +4,11 @@ import (
 	_ "embed"
 	"fmt"
 	"log/slog"
+	"net/http"
+	"net/url"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/jasonlvhit/gocron"
 	"github.com/patrickmn/go-cache"
@@ -28,9 +31,37 @@ var geoipCSV string
 
 var geoIPDB *pkg.GeoIPDatabase
 
+var httpClient *http.Client
+
+// setHTTPClient initializes the singleton HTTP client with timeout and proxy configuration
+func setHTTPClient() error {
+	timeout := time.Duration(5 * time.Second)
+
+	if f.Proxy == "" {
+		httpClient = &http.Client{
+			Timeout: timeout,
+		}
+		return nil
+	}
+	proxy, err := url.Parse(f.Proxy)
+	if err != nil {
+		return err
+	}
+	httpClient.Transport = &http.Transport{Proxy: http.ProxyURL(proxy)}
+	return nil
+}
+
 func main() {
 	pkg.Parseflags(&f)
-	pkg.SetupLoggingStdout(f) // nolint: errcheck
+
+	// Initialize proxy and HTTP client before logging setup
+	parseProxy()
+	if err := setHTTPClient(); err != nil {
+		slog.Error("Failed to set HTTP client", "error", err.Error())
+		return
+	}
+
+	pkg.SetupLoggingStdout(f, httpClient) // nolint: errcheck
 
 	// Initialize GeoIP database
 	var err error
@@ -39,7 +70,6 @@ func main() {
 		slog.Error("Failed to parse GeoIP database", "error", err.Error())
 	}
 
-	parseProxy()
 	wantsVersion()
 	validate()
 
@@ -201,7 +231,7 @@ func reportResult(result *pkg.ScanResult) {
 	}
 
 	if pkg.IsRecentlyModified(result.FileInfo, f.Every) {
-		pkg.Notify(result, f, version)
+		pkg.Notify(result, f, version, httpClient)
 	}
 }
 

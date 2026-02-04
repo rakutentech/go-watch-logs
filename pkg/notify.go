@@ -3,15 +3,17 @@ package pkg
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"time"
 
 	gmt "github.com/kevincobain2000/go-msteams/src"
 )
 
-func NotifyOwnError(e error, r slog.Record, msTeamsHook, proxy string) {
-	slog.Info("Sending own error to MS Teams")
+func NotifyOwnErrorToTeams(e error, r slog.Record, msTeamsHook, proxy string) {
 	hostname, _ := os.Hostname()
+	slog.Info("Sending own error to MS Teams")
+
 	details := []gmt.Details{
 		{
 			Label:   "Hostname",
@@ -29,21 +31,42 @@ func NotifyOwnError(e error, r slog.Record, msTeamsHook, proxy string) {
 		})
 		return true
 	})
-	if msTeamsHook == "" {
-		slog.Warn("MS Teams hook not set")
-		return
-	}
+
 	err := gmt.Send(hostname, details, msTeamsHook, proxy)
 	if err != nil {
 		// keep it warn to prevent infinite loop from the global handler of slog
 		slog.Warn("Error sending to Teams", "error", err.Error())
-	} else {
-		slog.Info("Successfully sent own error to MS Teams")
+		return
 	}
+	slog.Info("Successfully sent own error to MS Teams")
 }
 
-func Notify(result *ScanResult, f Flags, version string) {
-	slog.Info("Sending scan results to MS Teams")
+func NotifyOwnErrorToPagerDuty(e error, r slog.Record, pagerDutyKey string, httpClient *http.Client) {
+	hostname, _ := os.Hostname()
+	slog.Info("Sending own error to PagerDuty")
+
+	details := map[string]any{
+		"hostname": hostname,
+		"error":    e.Error(),
+	}
+	r.Attrs(func(attr slog.Attr) bool {
+		details[attr.Key] = fmt.Sprintf("%v", attr.Value)
+		return true
+	})
+	pd := NewPagerDuty()
+
+	status, err := pd.Send(hostname, details, pagerDutyKey, "error", "", httpClient)
+	if err != nil {
+		slog.Warn("Error sending to PagerDuty", "error", err.Error())
+		return
+	}
+	slog.Info("Successfully sent own error to PagerDuty", "status", status)
+}
+
+func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client) {
+	hostname, _ := os.Hostname()
+
+	// Build MS Teams details
 	details := []gmt.Details{
 		{
 			Label:   "go-watch-log version",
@@ -98,6 +121,8 @@ func Notify(result *ScanResult, f Flags, version string) {
 			Message: OrderedAsc(result.CountryCounts),
 		},
 	}
+
+
 	if result.FirstDate != "" || result.LastDate != "" {
 		var duration string
 		if result.FirstDate != "" && result.LastDate != "" {
@@ -126,18 +151,34 @@ func Notify(result *ScanResult, f Flags, version string) {
 	}
 	slog.Debug("Sending Alert Notify", logDetails...)
 
-	hostname, _ := os.Hostname()
-
-	if f.MSTeamsHook == "" {
-		slog.Warn("MS Teams hook not set")
-		return
+	// Send to MS Teams
+	if f.MSTeamsHook != "" {
+		slog.Info("Sending scan results to MS Teams")
+		err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
+		if err != nil {
+			// keep it warn to prevent infinite loop from the global handler of slog
+			slog.Warn("Error sending to Teams", "error", err.Error())
+		} else {
+			slog.Info("Successfully sent to MS Teams")
+		}
 	}
 
-	err := gmt.Send(hostname, details, f.MSTeamsHook, f.Proxy)
-	if err != nil {
-		// keep it warn to prevent infinite loop from the global handler of slog
-		slog.Warn("Error sending to Teams", "error", err.Error())
-	} else {
-		slog.Info("Successfully sent to MS Teams")
+	// Send to PagerDuty
+	if f.PagerDutyKey != "" {
+		slog.Info("Sending scan results to PagerDuty")
+
+		// Convert from gmt.Details to interface map for PagerDuty
+		pdetails := make(map[string]any)
+		for _, d := range details {
+			pdetails[d.Label] = d.Message
+		}
+
+		pd := NewPagerDuty()
+		status, err := pd.Send(hostname, pdetails, f.PagerDutyKey, result.Severity, f.PagerDutyDedupKey, httpClient)
+		if err != nil {
+			slog.Warn("Error sending to PagerDuty", "error", err.Error())
+		} else {
+			slog.Info("Successfully sent to PagerDuty", "status", status)
+		}
 	}
 }

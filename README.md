@@ -2,7 +2,7 @@
   Go Watch Logs
 </h1>
 <p align="center">
-  Monitor static logs file for patterns and send alerts to MS Teams<br>
+  Monitor static logs file for patterns and send alerts to MS Teams & PagerDuty<br>
   Low Memory Footprint<br>
 </p>
 
@@ -14,7 +14,7 @@
 
 **Flexible:** Works with any logs file, huge to massive, log rotation is supported.
 
-**Notify:** Supports MS Teams or emails.
+**Notify:** Supports MS Teams, PagerDuty.
 
 **Scheduler:** Run it on a cron.
 
@@ -41,6 +41,12 @@ curl -sL https://raw.githubusercontent.com/rakutentech/go-watch-logs/master/inst
 ```sh
 # match error patterns and notify on MS Teams
 go-watch-logs --file-path=my.log --match="error:pattern1|error:pattern2" --ms-teams-hook="https://outlook.office.com/webhook/xxxxx"
+
+# match error patterns and notify on PagerDuty
+go-watch-logs --file-path=my.log --match="error:pattern1|error:pattern2" --pagerduty-key="YOUR_ROUTING_KEY" --pagerduty-dedupkey="uniq-name"
+
+# notify both MS Teams and PagerDuty
+go-watch-logs --file-path=my.log --match="error" --ms-teams-hook="https://..." --pagerduty-key="YOUR_ROUTING_KEY" --pagerduty-dedupkey="uniq-name"
 
 # match 50 and 40 errors on ltsv log
 go-watch-logs --file-path=my.log --match='HTTP/1.1" 50|HTTP/1.1" 40'
@@ -83,6 +89,10 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
     	on minimum num of matches, it should notify (default 1)
   -ms-teams-hook string
     	ms teams webhook
+  -pagerduty-key string
+    	pagerduty routing/integration key
+  -pagerduty-dedupkey string
+    	pagerduty deduplication key (default: auto-generated from file path and pattern)
   -post-cmd string
     	run this shell command after every scan when min errors are found
   -proxy string
