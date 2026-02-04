@@ -13,7 +13,7 @@ type mockHTTPClient struct {
 	err      error
 }
 
-func (m *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
+func (m *mockHTTPClient) Do(_ *http.Request) (*http.Response, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -26,7 +26,7 @@ type mockTransport struct {
 	err      error
 }
 
-func (m *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (m *mockTransport) RoundTrip(_ *http.Request) (*http.Response, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
