@@ -142,4 +142,6 @@ go test ./...
 - **v1.1.0** Uses in memory state for faster performance, streaks added
 - **v1.1.3** Stable Version
 - **v1.1.4** Supports Geo Tagging via IP Address offline
+- **v1.1.5** Supports Pager Duty
+- **v1.1.6** Supports longer regex patterns by splitting them
 
