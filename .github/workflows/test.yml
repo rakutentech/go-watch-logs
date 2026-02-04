@@ -18,9 +18,11 @@ jobs:
         with:
           version: 'mod'
 
-      - name: Install Tools
-        run: |
-          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
+          version: latest
 
       - run: go mod tidy
       - run: golangci-lint run ./...
