@@ -11,7 +11,7 @@ import (
 )
 
 func SearchIPAddresses(input string) []string {
-	var ips []string
+	var ips []string //nolint:prealloc
 	ipRegex := regexp.MustCompile(`\b(?:\d{1,3}\.){3}\d{1,3}\b`)
 	matches := ipRegex.FindAllString(input, -1)
 	ips = append(ips, matches...)

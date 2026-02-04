@@ -18,11 +18,12 @@ jobs:
         with:
           version: 'mod'
 
-      - name: Install Tools
-        run: |
-          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - name: Golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          skip-cache: true
 
       - run: go mod tidy
-      - run: golangci-lint run ./...
+      # - run: golangci-lint run ./...
       - run: go build
       - run: go test ./...

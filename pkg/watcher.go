@@ -2,7 +2,9 @@ package pkg
 
 import (
 	"bufio"
+	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"regexp"
 	"time"
@@ -20,6 +22,8 @@ type Watcher struct {
 	scanCountKey    string
 	matchPattern    string
 	ignorePattern   string
+	regexMatch      []*regexp.Regexp // Pre-compiled match regexes
+	regexIgnore     []*regexp.Regexp // Pre-compiled ignore regexes
 	maxBufferMB     int
 	lastLineNum     int
 	lastFileSize    int64
@@ -30,6 +34,123 @@ type Watcher struct {
 const limitCountryCount = 25
 
 const previewLineMaxLength = 500
+
+// Pattern splitting thresholds
+const (
+	patternSplitThreshold = 500 // Minimum length to consider splitting
+	patternChunkSize      = 300 // Target size for each chunk
+)
+
+// splitAndCompilePattern splits a long pattern by | and compiles into multiple regexes
+func splitAndCompilePattern(pattern string) ([]*regexp.Regexp, error) {
+	if pattern == "" {
+		return nil, nil
+	}
+
+	// If pattern is short, compile as-is
+	if len(pattern) < patternSplitThreshold {
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return nil, err
+		}
+		return []*regexp.Regexp{re}, nil
+	}
+
+	// Split long patterns by | for efficiency
+	parts := splitPattern(pattern)
+
+	// Calculate how many parts per regex based on total length
+	totalLen := len(pattern)
+	numChunks := (totalLen + patternChunkSize - 1) / patternChunkSize
+	if numChunks < 1 {
+		numChunks = 1
+	}
+	if numChunks > len(parts) {
+		numChunks = len(parts)
+	}
+
+	partsPerChunk := (len(parts) + numChunks - 1) / numChunks
+	if partsPerChunk < 1 {
+		partsPerChunk = 1
+	}
+
+	var regexes []*regexp.Regexp
+	for i := 0; i < len(parts); i += partsPerChunk {
+		end := i + partsPerChunk
+		if end > len(parts) {
+			end = len(parts)
+		}
+
+		// Join the parts back together
+		chunkPattern := ""
+		for j := i; j < end; j++ {
+			if j > i {
+				chunkPattern += "|"
+			}
+			chunkPattern += parts[j]
+		}
+
+		re, err := regexp.Compile(chunkPattern)
+		if err != nil {
+			return nil, err
+		}
+		regexes = append(regexes, re)
+	}
+
+	if len(regexes) > 1 {
+		slog.Warn("Regex was long, splitting into parts", "originalLength", len(pattern), "regexCount", len(regexes))
+		slog.Info("Compiled regex patterns", "patterns", fmt.Sprintf("%q", regexes))
+	}
+
+	return regexes, nil
+}
+
+// splitPattern splits a regex pattern by | separators
+// Escaped pipes (\|) are NOT used as split points - they are kept as part of the pattern
+func splitPattern(pattern string) []string {
+	if pattern == "" {
+		return []string{}
+	}
+
+	var parts []string
+	var current string
+	escaped := false
+
+	for _, ch := range pattern {
+		if escaped {
+			current += string(ch)
+			escaped = false
+			continue
+		}
+
+		if ch == '\\' {
+			current += string(ch)
+			escaped = true
+			continue
+		}
+
+		if ch == '|' {
+			if current != "" {
+				parts = append(parts, current)
+				current = ""
+			}
+			continue
+		}
+
+		current += string(ch)
+	}
+
+	if current != "" {
+		parts = append(parts, current)
+	}
+
+	// If no splits found, return the original pattern
+	if len(parts) == 0 {
+		return []string{pattern}
+	}
+
+	return parts
+}
 
 func NewWatcher(
 	filePath string,
@@ -53,6 +174,20 @@ func NewWatcher(
 		maxBufferMB:     f.MaxBufferMB,
 		streak:          DisplayableStreakNumber(f.Streak),
 	}
+
+	// Pre-compile match regexes
+	var err error
+	watcher.regexMatch, err = splitAndCompilePattern(f.Match)
+	if err != nil {
+		return nil, err
+	}
+
+	// Pre-compile ignore regexes
+	watcher.regexIgnore, err = splitAndCompilePattern(f.Ignore)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := watcher.loadState(); err != nil {
 		return nil, err
 	}
@@ -109,15 +244,6 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		return nil, err
 	}
 
-	regMatch, err := regexp.Compile(w.matchPattern)
-	if err != nil {
-		return nil, err
-	}
-	regIgnore, err := regexp.Compile(w.ignorePattern)
-	if err != nil {
-		return nil, err
-	}
-
 	scanner := bufio.NewScanner(file)
 	if w.maxBufferMB > 0 {
 		// For large lines
@@ -143,10 +269,10 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 			continue
 		}
 
-		if w.ignorePattern != "" && regIgnore.Match(line) {
+		if w.matchesAny(w.regexIgnore, line) {
 			continue
 		}
-		if regMatch.Match(line) {
+		if w.matchesAny(w.regexMatch, line) {
 			lineStr := string(line)
 
 			if len(countryCounts) < limitCountryCount {
@@ -222,6 +348,16 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		ScanCount:     scanCount,
 		CountryCounts: countryCounts,
 	}, nil
+}
+
+// matchesAny checks if the line matches any of the regexes in the slice
+func (w *Watcher) matchesAny(regexes []*regexp.Regexp, line []byte) bool {
+	for _, re := range regexes {
+		if re.Match(line) {
+			return true
+		}
+	}
+	return false
 }
 
 func (w *Watcher) loadState() error {
