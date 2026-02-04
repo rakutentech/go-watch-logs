@@ -65,6 +65,7 @@ type ScanResult struct {
 	FileInfo      os.FileInfo
 	ErrorCount    int
 	ErrorPercent  float64
+	Severity   string
 	LinesRead     int
 	FirstLine     string
 	FirstDate     string
@@ -180,6 +181,11 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 
 	// Restrict to two decimal places
 	matchPercentage = float64(int(matchPercentage*100)) / 100
+	severity := "error"
+	if matchPercentage >= 50 {
+		severity = "critical"
+	}
+
 	w.lastLineNum = currentLineNum
 	w.lastFileSize = bytesRead
 
@@ -210,6 +216,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		FilePath:      w.filePath,
 		FileInfo:      fileInfo,
 		ErrorPercent:  matchPercentage,
+		Severity:      severity,
 		LinesRead:     linesRead,
 		Streak:        errorHistory,
 		ScanCount:     scanCount,

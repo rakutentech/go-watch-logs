@@ -13,16 +13,18 @@ type Flags struct {
 	PostCommand    string
 	LogFile        string
 
-	Min         int
-	Streak      int
-	Every       uint64
-	Proxy       string
-	LogLevel    int
-	MemLimit    int
-	MSTeamsHook string
-	MaxBufferMB int
-	Test        bool
-	Version     bool
+	Min                int
+	Streak             int
+	Every              uint64
+	Proxy              string
+	LogLevel           int
+	MemLimit           int
+	MSTeamsHook        string
+	PagerDutyKey       string
+	PagerDutyDedupKey  string
+	MaxBufferMB        int
+	Test               bool
+	Version            bool
 }
 
 func Parseflags(f *Flags) {
@@ -50,6 +52,8 @@ go-watch-logs --file-path=./ssl_access.*log --test
 
 	flag.StringVar(&f.Proxy, "proxy", "", "http proxy for webhooks")
 	flag.StringVar(&f.MSTeamsHook, "ms-teams-hook", "", "ms teams webhook")
+	flag.StringVar(&f.PagerDutyKey, "pagerduty-key", "", "pagerduty routing/integration key")
+	flag.StringVar(&f.PagerDutyDedupKey, "pagerduty-dedupkey", "", "pagerduty uniq key, for grpuping events")
 
 	flag.Parse()
 	ParsePostFlags(f)
