@@ -44,7 +44,7 @@ func ParseGeoIPCSV(csvData string) (*GeoIPDatabase, error) {
 	}
 
 	for _, record := range records {
-		if len(record) < 7 {
+		if len(record) < 3 {
 			continue
 		}
 
@@ -61,8 +61,8 @@ func ParseGeoIPCSV(csvData string) (*GeoIPDatabase, error) {
 		entry := GeoIPEntry{
 			StartIP:     uint32(startIP),
 			EndIP:       uint32(endIP),
-			CountryCode: record[4],
-			CountryName: record[6],
+			CountryCode: record[2],
+			CountryName: record[2], // Use country code as name
 		}
 
 		db.entries = append(db.entries, entry)

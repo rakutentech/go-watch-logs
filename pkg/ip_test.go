@@ -7,14 +7,14 @@ import (
 	"testing"
 )
 
-const testCSVData = `16777216,16777471,16777216,16777471,AU,Australia,Australia
-16777472,16777727,16777472,16777727,CN,China,China
-16778240,16779263,16778240,16779263,CN,China,China
-16781312,16785407,16781312,16785407,JP,Japan,Japan
-16785408,16793599,16785408,16793599,CN,China,China
-134744064,134750207,134744064,134750207,AU,Australia,Australia
-134750208,134758399,134750208,134758399,US,United States,United States
-134758400,134766591,134758400,134766591,CN,China,China`
+const testCSVData = `16777216,16777471,AU
+16777472,16777727,CN
+16778240,16779263,CN
+16781312,16785407,JP
+16785408,16793599,CN
+134744064,134750207,AU
+134750208,134758399,US
+134758400,134766591,CN`
 
 // TestSearchIPAddresses tests the IP address extraction from text
 func TestSearchIPAddresses(t *testing.T) {
@@ -92,7 +92,7 @@ func TestParseGeoIPCSV(t *testing.T) {
 		},
 		{
 			name:        "single entry",
-			csvData:     `16777216,16777471,16777216,16777471,AU,Australia,Australia`,
+			csvData:     `16777216,16777471,AU`,
 			expectError: false,
 			entryCount:  1,
 		},
@@ -104,15 +104,15 @@ func TestParseGeoIPCSV(t *testing.T) {
 		},
 		{
 			name: "rows with invalid start IP skipped",
-			csvData: `invalid,16777471,16777216,16777471,AU,Australia,Australia
-16777472,16777727,16777472,16777727,CN,China,China`,
+			csvData: `invalid,16777471,AU
+16777472,16777727,CN`,
 			expectError: false,
 			entryCount:  1,
 		},
 		{
 			name: "rows with invalid end IP skipped",
-			csvData: `16777216,invalid,16777216,16777471,AU,Australia,Australia
-16777472,16777727,16777472,16777727,CN,China,China`,
+			csvData: `16777216,invalid,AU
+16777472,16777727,CN`,
 			expectError: false,
 			entryCount:  1,
 		},
@@ -154,35 +154,35 @@ func TestLookupIP(t *testing.T) {
 			name:            "valid IP in Australia range (first)",
 			ip:              "1.0.0.1",
 			expectedCode:    "AU",
-			expectedCountry: "Australia",
+			expectedCountry: "AU",
 			expectError:     false,
 		},
 		{
 			name:            "valid IP in China range",
 			ip:              "1.0.1.1",
 			expectedCode:    "CN",
-			expectedCountry: "China",
+			expectedCountry: "CN",
 			expectError:     false,
 		},
 		{
 			name:            "valid IP in Japan range",
 			ip:              "1.0.20.1",
 			expectedCode:    "JP",
-			expectedCountry: "Japan",
+			expectedCountry: "JP",
 			expectError:     false,
 		},
 		{
 			name:            "valid IP in US range",
 			ip:              "8.8.50.1",
 			expectedCode:    "US",
-			expectedCountry: "United States",
+			expectedCountry: "US",
 			expectError:     false,
 		},
 		{
 			name:            "valid IP in Australia range (second)",
 			ip:              "8.8.8.8",
 			expectedCode:    "AU",
-			expectedCountry: "Australia",
+			expectedCountry: "AU",
 			expectError:     false,
 		},
 		{
@@ -381,24 +381,24 @@ func TestGetCountryCounts(t *testing.T) {
 			name: "single country",
 			ips:  []string{"1.0.0.1", "1.0.0.2"},
 			expectedCounts: map[string]int{
-				"Australia": 2,
+				"AU": 2,
 			},
 		},
 		{
 			name: "multiple countries",
 			ips:  []string{"1.0.0.1", "1.0.1.1", "8.8.50.1"},
 			expectedCounts: map[string]int{
-				"Australia":     1,
-				"China":         1,
-				"United States": 1,
+				"AU": 1,
+				"CN": 1,
+				"US": 1,
 			},
 		},
 		{
 			name: "repeated countries",
 			ips:  []string{"1.0.0.1", "8.8.8.8", "8.8.50.1", "8.8.51.1"},
 			expectedCounts: map[string]int{
-				"Australia":     2,
-				"United States": 2,
+				"AU": 2,
+				"US": 2,
 			},
 		},
 		{
@@ -410,8 +410,8 @@ func TestGetCountryCounts(t *testing.T) {
 			name: "with invalid IPs",
 			ips:  []string{"1.0.0.1", "invalid", "not-an-ip"},
 			expectedCounts: map[string]int{
-				"Australia": 1,
-				"Unknown":   2,
+				"AU":      1,
+				"Unknown": 2,
 			},
 		},
 		{
@@ -453,8 +453,8 @@ func TestGeoIPDatabase_EdgeCases(t *testing.T) {
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
-		if code != "AU" || country != "Australia" {
-			t.Errorf("Expected AU/Australia, got %s/%s", code, country)
+		if code != "AU" || country != "AU" {
+			t.Errorf("Expected AU/AU, got %s/%s", code, country)
 		}
 	})
 
@@ -464,8 +464,8 @@ func TestGeoIPDatabase_EdgeCases(t *testing.T) {
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
-		if code != "AU" || country != "Australia" {
-			t.Errorf("Expected AU/Australia, got %s/%s", code, country)
+		if code != "AU" || country != "AU" {
+			t.Errorf("Expected AU/AU, got %s/%s", code, country)
 		}
 	})
 
@@ -500,8 +500,8 @@ func TestIPLookupResult(t *testing.T) {
 		if result.CountryCode != "AU" {
 			t.Errorf("Expected code AU, got %s", result.CountryCode)
 		}
-		if result.CountryName != "Australia" {
-			t.Errorf("Expected country Australia, got %s", result.CountryName)
+		if result.CountryName != "AU" {
+			t.Errorf("Expected country AU, got %s", result.CountryName)
 		}
 		if result.Error != nil {
 			t.Errorf("Expected no error, got %v", result.Error)
@@ -531,7 +531,7 @@ func TestIPLookupResult(t *testing.T) {
 
 // TestParseGeoIPCSV_DataIntegrity tests that parsed data maintains integrity
 func TestParseGeoIPCSV_DataIntegrity(t *testing.T) {
-	csvData := `16777216,16777471,16777216,16777471,US,United States,United States of America`
+	csvData := `16777216,16777471,US`
 	db, err := ParseGeoIPCSV(csvData)
 	if err != nil {
 		t.Fatalf("Failed to parse CSV: %v", err)
@@ -551,8 +551,8 @@ func TestParseGeoIPCSV_DataIntegrity(t *testing.T) {
 	if entry.CountryCode != "US" {
 		t.Errorf("Expected CountryCode US, got %s", entry.CountryCode)
 	}
-	if entry.CountryName != "United States of America" {
-		t.Errorf("Expected CountryName 'United States of America', got %s", entry.CountryName)
+	if entry.CountryName != "US" {
+		t.Errorf("Expected CountryName 'US', got %s", entry.CountryName)
 	}
 }
 
@@ -608,7 +608,7 @@ func TestParseGeoIPCSV_LargeDataset(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		start := uint32(16777216 + i*256)
 		end := start + 255
-		builder.WriteString(fmt.Sprintf("%d,%d,%d,%d,US,United States,United States\n", start, end, start, end))
+		builder.WriteString(fmt.Sprintf("%d,%d,US\n", start, end))
 	}
 
 	db, err := ParseGeoIPCSV(builder.String())
@@ -625,8 +625,8 @@ func TestParseGeoIPCSV_LargeDataset(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	if code != "US" || country != "United States" {
-		t.Errorf("Expected US/United States, got %s/%s", code, country)
+	if code != "US" || country != "US" {
+		t.Errorf("Expected US/US, got %s/%s", code, country)
 	}
 }
 
