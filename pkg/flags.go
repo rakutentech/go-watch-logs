@@ -31,7 +31,7 @@ func Parseflags(f *Flags) {
 	flag.StringVar(&f.FilePath, "file-path", "", "full path to the file to watch")
 	flag.StringVar(&f.FilePath, "f", "", "(short for --file-path) full path to the file to watch")
 	flag.StringVar(&f.LogFile, "log-file", "", "full path to output log file. Empty will log to stdout")
-	flag.StringVar(&f.Match, "match", "", "regex for matching errors (empty to match all lines)")
+	flag.StringVar(&f.Match, "match", ".*", "regex for matching errors (empty to match all lines)")
 	flag.StringVar(&f.Ignore, "ignore", "", "regex for ignoring errors (empty to ignore none)")
 	flag.StringVar(&f.PostCommand, "post-cmd", "", "run this shell command after every scan when min errors are found")
 	flag.Uint64Var(&f.Every, "every", 0, "run every n seconds (0 to run once)")
