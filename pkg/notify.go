@@ -164,7 +164,7 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 	}
 
 	// Send to PagerDuty
-	if f.PagerDutyKey != "" {
+	if f.PagerDutyKey != "" && f.PagerDutyDedupKey != "" {
 		slog.Info("Sending scan results to PagerDuty")
 
 		// Convert from gmt.Details to interface map for PagerDuty
