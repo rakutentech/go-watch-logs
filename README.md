@@ -144,4 +144,5 @@ go test ./...
 - **v1.1.4** Supports Geo Tagging via IP Address offline
 - **v1.1.5** Supports Pager Duty
 - **v1.1.6** Supports longer regex patterns by splitting them
+- **v1.1.11** vup go 1.26
 
