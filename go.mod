@@ -1,6 +1,6 @@
 module github.com/rakutentech/go-watch-logs
 
-go 1.24
+go 1.26
 
 require (
 	github.com/MatusOllah/slogcolor v1.4.0
