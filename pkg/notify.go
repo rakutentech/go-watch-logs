@@ -73,6 +73,10 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 			Message: version,
 		},
 		{
+			Label:   "Severity",
+			Message: result.Severity,
+		},
+		{
 			Label:   "File",
 			Message: result.FilePath,
 		},

@@ -25,6 +25,7 @@ type Watcher struct {
 	regexMatch      []*regexp.Regexp // Pre-compiled match regexes
 	regexIgnore     []*regexp.Regexp // Pre-compiled ignore regexes
 	maxBufferMB     int
+	severity        string
 	lastLineNum     int
 	lastFileSize    int64
 	timestampNow    string
@@ -160,6 +161,7 @@ func NewWatcher(
 ) (*Watcher, error) {
 	now := time.Now()
 
+
 	watcher := &Watcher{
 		cache:           c,
 		filePath:        filePath,
@@ -172,6 +174,7 @@ func NewWatcher(
 		scanCountKey:    "sc-" + filePath,
 		timestampNow:    now.Format("2006-01-02 15:04:05"),
 		maxBufferMB:     f.MaxBufferMB,
+		severity:        f.Severity,
 		streak:          DisplayableStreakNumber(f.Streak),
 	}
 
@@ -307,10 +310,6 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 
 	// Restrict to two decimal places
 	matchPercentage = float64(int(matchPercentage*100)) / 100
-	severity := "error"
-	if matchPercentage >= 50 {
-		severity = "critical"
-	}
 
 	w.lastLineNum = currentLineNum
 	w.lastFileSize = bytesRead
@@ -342,7 +341,7 @@ func (w *Watcher) Scan() (*ScanResult, error) {
 		FilePath:      w.filePath,
 		FileInfo:      fileInfo,
 		ErrorPercent:  matchPercentage,
-		Severity:      severity,
+		Severity:      w.severity,
 		LinesRead:     linesRead,
 		Streak:        errorHistory,
 		ScanCount:     scanCount,
