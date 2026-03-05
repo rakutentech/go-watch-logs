@@ -23,6 +23,7 @@ type Flags struct {
 	PagerDutyKey       string
 	PagerDutyDedupKey  string
 	MaxBufferMB        int
+	Severity           string
 	Test               bool
 	Version            bool
 }
@@ -54,6 +55,7 @@ go-watch-logs --file-path=./ssl_access.*log --test
 	flag.StringVar(&f.MSTeamsHook, "ms-teams-hook", "", "ms teams webhook")
 	flag.StringVar(&f.PagerDutyKey, "pagerduty-key", "", "pagerduty routing/integration key")
 	flag.StringVar(&f.PagerDutyDedupKey, "pagerduty-dedupkey", "", "pagerduty uniq key, for grpuping events")
+	flag.StringVar(&f.Severity, "severity", "error", "severity level for alerts (e.g. info, warning, error, critical)")
 
 	flag.Parse()
 	ParsePostFlags(f)

@@ -97,6 +97,8 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
     	run this shell command after every scan when min errors are found
   -proxy string
     	http proxy for webhooks
+  -severity string
+    	severity level for alerts (e.g. info, warning, error, critical) (default "error")
   -streak int
     	on minimum num of streak matches, it should notify (default 1)
   -test
@@ -145,4 +147,6 @@ go test ./...
 - **v1.1.5** Supports Pager Duty
 - **v1.1.6** Supports longer regex patterns by splitting them
 - **v1.1.11** vup go 1.26
+- **v1.1.19** Pager Duty support
+- **v1.1.20** Pager Duty severity support from cli
 
