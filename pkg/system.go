@@ -60,7 +60,7 @@ func ReadFromPipeInput() string {
 				break
 			}
 			if err != nil {
-				slog.Error("Error reading from pipe", "error", err.Error())
+				slog.Error("Error reading from pipe", "error", err)
 				break
 			}
 			buf = append(buf, tmp[:n]...)

@@ -608,7 +608,7 @@ func TestParseGeoIPCSV_LargeDataset(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		start := uint32(16777216 + i*256)
 		end := start + 255
-		builder.WriteString(fmt.Sprintf("%d,%d,US\n", start, end))
+		fmt.Fprintf(&builder, "%d,%d,US\n", start, end)
 	}
 
 	db, err := ParseGeoIPCSV(builder.String())
