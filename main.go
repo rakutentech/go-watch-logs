@@ -203,7 +203,7 @@ func watch(filePath string) {
 
 	result, err := watcher.Scan()
 	if err != nil {
-		slog.Error("Error scanning file", "error", err.Error(), "filePath", filePath)
+		slog.Warn("Error scanning file", "error", err.Error(), "filePath", filePath)
 		return
 	}
 	reportResult(result)
