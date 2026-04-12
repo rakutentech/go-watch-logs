@@ -89,15 +89,16 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 			Message: f.Ignore,
 		},
 	}
-	// Alert when matched lines are below the min-match threshold
-	if f.MinMatch > 0 {
+
+	if f.HeartBeat {
 		details = append(details, gmt.Details{
-			Label:   "MinMatch",
-			Message: fmt.Sprintf("%d", f.MinMatch),
+			Label:   "Heart Beat",
+			Message: "Failed to match minimum matches",
 		})
 	}
+
 	// Regular match for errors matching
-	if f.MinMatch == 0 {
+	if !f.HeartBeat {
 		details = append(details, []gmt.Details{
 		{
 			Label: "Lines",

@@ -230,8 +230,8 @@ func reportResult(result *pkg.ScanResult) {
 		return
 	}
 
-	if f.MinMatch > 0 && result.ErrorCount < f.MinMatch {
-		slog.Info("Min match not met", "min-match", f.MinMatch, "matched", result.ErrorCount)
+	if f.HeartBeat && result.ErrorCount < f.Min {
+		slog.Info("Min match not met", "min-match", f.Min, "matched", result.ErrorCount)
 		pkg.Notify(result, f, version, httpClient)
 		return
 	}
