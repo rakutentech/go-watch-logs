@@ -230,6 +230,12 @@ func reportResult(result *pkg.ScanResult) {
 		return
 	}
 
+	if f.MinMatch > 0 && result.ErrorCount < f.MinMatch {
+		slog.Info("Min match not met", "min-match", f.MinMatch, "matched", result.ErrorCount)
+		pkg.Notify(result, f, version, httpClient)
+		return
+	}
+
 	if !pkg.NonStreakZero(result.Streak, f.Streak, f.Min) {
 		slog.Info("Streak not met", "streak", f.Streak, "streaks", result.Streak)
 		return

@@ -88,6 +88,9 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 			Label:   "Ignore",
 			Message: f.Ignore,
 		},
+	}
+	if f.MinMatch == 0 {
+		details = append(details, []gmt.Details{
 		{
 			Label: "Lines",
 			Message: fmt.Sprintf(
@@ -100,8 +103,9 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 		{
 			Label: "Settings",
 			Message: fmt.Sprintf(
-				"min (%d), every (%d secs), max streak (%d)",
+				"min (%d), min-match (%d), every (%d secs), max streak (%d)",
 				f.Min,
+				f.MinMatch,
 				f.Every,
 				f.Streak,
 			),
@@ -124,6 +128,7 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 			Label:   "Countries",
 			Message: OrderedAsc(result.CountryCounts),
 		},
+		}...)
 	}
 
 
@@ -153,7 +158,7 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 	for _, detail := range details {
 		logDetails = append(logDetails, detail.Label, detail.Message)
 	}
-	slog.Debug("Sending Alert Notify", logDetails...)
+	slog.Info("Sending Alert Notify", logDetails...)
 
 	// Send to MS Teams
 	if f.MSTeamsHook != "" {
