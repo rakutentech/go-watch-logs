@@ -89,6 +89,14 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 			Message: f.Ignore,
 		},
 	}
+	// Alert when matched lines are below the min-match threshold
+	if f.MinMatch > 0 {
+		details = append(details, gmt.Details{
+			Label:   "MinMatch",
+			Message: fmt.Sprintf("%d", f.MinMatch),
+		})
+	}
+	// Regular match for errors matching
 	if f.MinMatch == 0 {
 		details = append(details, []gmt.Details{
 		{
@@ -103,9 +111,8 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 		{
 			Label: "Settings",
 			Message: fmt.Sprintf(
-				"min (%d), min-match (%d), every (%d secs), max streak (%d)",
+				"min (%d), every (%d secs), max streak (%d)",
 				f.Min,
-				f.MinMatch,
 				f.Every,
 				f.Streak,
 			),
