@@ -81,6 +81,8 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
     	log level (0=info, -4=debug, 4=warn, 8=error)
   -match string
     	regex for matching errors (empty to match all lines)
+  -heartbeat
+    	notify when minimum matches are not met (default false)
   -mbf int
     	max buffer in MB, default is 0 (not provided) for go's default 64KB
   -mem-limit int

@@ -88,6 +88,18 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 			Label:   "Ignore",
 			Message: f.Ignore,
 		},
+	}
+
+	if f.HeartBeat {
+		details = append(details, gmt.Details{
+			Label:   "Heart Beat",
+			Message: "Failed to match minimum matches",
+		})
+	}
+
+	// Regular match for errors matching
+	if !f.HeartBeat {
+		details = append(details, []gmt.Details{
 		{
 			Label: "Lines",
 			Message: fmt.Sprintf(
@@ -124,6 +136,7 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 			Label:   "Countries",
 			Message: OrderedAsc(result.CountryCounts),
 		},
+		}...)
 	}
 
 
@@ -153,7 +166,7 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 	for _, detail := range details {
 		logDetails = append(logDetails, detail.Label, detail.Message)
 	}
-	slog.Debug("Sending Alert Notify", logDetails...)
+	slog.Info("Sending Alert Notify", logDetails...)
 
 	// Send to MS Teams
 	if f.MSTeamsHook != "" {
