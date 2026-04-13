@@ -7,7 +7,6 @@ require (
 	github.com/PagerDuty/go-pdagent v0.5.1
 	github.com/gravwell/gravwell/v3 v3.8.34
 	github.com/jasonlvhit/gocron v0.0.1
-	github.com/kevincobain2000/go-msteams v1.1.1
 	github.com/mattn/go-isatty v0.0.20
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/patrickmn/go-cache v2.1.0+incompatible

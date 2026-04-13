@@ -19,18 +19,17 @@ const (
 
 // GlobalHandler is a custom handler that catches all logs
 type GlobalHandler struct {
-	next          slog.Handler
-	msTeamsHook   string
-	pagerDutyKey  string
-	proxy         string
-	httpClient    *http.Client
+	next         slog.Handler
+	msTeamsHook  string
+	pagerDutyKey string
+	httpClient   *http.Client
 }
 
 func (h *GlobalHandler) Handle(ctx context.Context, r slog.Record) error {
 	if r.Level.String() == SlogErrorLabel {
 		err := fmt.Errorf("global log capture - Level: %s, Message: %s", r.Level.String(), r.Message)
 		if h.msTeamsHook != "" {
-			NotifyOwnErrorToTeams(err, r, h.msTeamsHook, h.proxy)
+			NotifyOwnErrorToTeams(err, r, h.msTeamsHook, h.httpClient)
 		}
 		if h.pagerDutyKey != "" {
 			NotifyOwnErrorToPagerDuty(err, r, h.pagerDutyKey, h.httpClient)
@@ -80,7 +79,6 @@ func SetupLoggingStdout(f Flags, httpClient *http.Client) error {
 		next:         handler,
 		msTeamsHook:  f.MSTeamsHook,
 		pagerDutyKey: f.PagerDutyKey,
-		proxy:        f.Proxy,
 		httpClient:   httpClient,
 	}
 	slog.SetDefault(slog.New(globalHandler))

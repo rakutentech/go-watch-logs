@@ -20,6 +20,7 @@ type Flags struct {
 	LogLevel           int
 	MemLimit           int
 	MSTeamsHook        string
+	GitURL             string
 	PagerDutyKey       string
 	PagerDutyDedupKey  string
 	MaxBufferMB        int
@@ -53,6 +54,7 @@ go-watch-logs --file-path=./ssl_access.*log --test
 
 	flag.StringVar(&f.Proxy, "proxy", "", "http proxy for webhooks")
 	flag.StringVar(&f.MSTeamsHook, "ms-teams-hook", "", "ms teams webhook")
+	flag.StringVar(&f.GitURL, "git-url", "", "git repo URL (e.g. github.com/org/repo) for MS Teams issue button")
 	flag.StringVar(&f.PagerDutyKey, "pagerduty-key", "", "pagerduty routing/integration key")
 	flag.StringVar(&f.PagerDutyDedupKey, "pagerduty-dedupkey", "", "pagerduty uniq key, for grpuping events")
 	flag.StringVar(&f.Severity, "severity", "error", "severity level for alerts (e.g. info, warning, error, critical)")

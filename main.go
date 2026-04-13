@@ -35,7 +35,7 @@ var httpClient *http.Client
 
 // setHTTPClient initializes the singleton HTTP client with timeout and proxy configuration
 func setHTTPClient() error {
-	timeout := time.Duration(5 * time.Second)
+	timeout := time.Duration(3 * time.Second)
 
 	if f.Proxy == "" {
 		httpClient = &http.Client{
