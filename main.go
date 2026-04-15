@@ -220,13 +220,24 @@ func reportResult(result *pkg.ScanResult) {
 	slog.Info("Preview line", "line", pkg.Truncate(result.PreviewLine, pkg.TruncateMax))
 
 	slog.Info("Last line", "date", result.LastDate, "line", pkg.Truncate(result.LastLine, pkg.TruncateMax))
-	slog.Info("Error count", "percent", fmt.Sprintf("%d (%.2f)", result.ErrorCount, result.ErrorPercent)+"%")
+	slog.Info("error count", "count", result.ErrorCount, "percent", fmt.Sprintf("%.2f", result.ErrorPercent)+"%")
+	slog.Info("Severity", "level", result.Severity)
+	slog.Info("Min match", "count", f.Min)
 	slog.Info("History", "max streak", f.Streak, "current streaks", result.Streak, "symbols", pkg.StreakSymbols(result.Streak, f.Streak, f.Min))
 	slog.Info("Countries", "counts", fmt.Sprintf("%d, %v", len(result.CountryCounts), result.CountryCounts))
 	slog.Info("Scan", "count", result.ScanCount)
 
 	if result.IsFirstScan() {
 		slog.Info("First scan, skipping notification")
+		return
+	}
+
+
+	if f.HeartBeat {
+		if result.ErrorCount < f.Min {
+			slog.Info("Min match not met", "min-match", f.Min, "matched", result.ErrorCount)
+			pkg.Notify(result, f, version, httpClient)
+		}
 		return
 	}
 

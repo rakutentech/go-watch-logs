@@ -14,6 +14,7 @@ type Flags struct {
 	LogFile        string
 
 	Min                int
+	HeartBeat           bool
 	Streak             int
 	Every              uint64
 	Proxy              string
@@ -42,6 +43,7 @@ func Parseflags(f *Flags) {
 	flag.IntVar(&f.FilePathsCap, "file-paths-cap", 100, "max number of file paths to watch")
 	flag.Uint64Var(&f.FileRecentSecs, "file-recent-secs", 86400, "only files modified in the last n seconds, 0 to disable")
 	flag.IntVar(&f.Min, "min", 1, "on minimum num of matches, it should notify")
+	flag.BoolVar(&f.HeartBeat, "heartbeat", false, "enable heart beat notifications")
 	flag.IntVar(&f.Streak, "streak", 1, "on minimum num of streak matches, it should notify")
 	flag.IntVar(&f.MaxBufferMB, "mbf", 0, "max buffer in MB, default is 0 (not provided) for go's default 64KB")
 	flag.BoolVar(&f.Version, "version", false, "")
