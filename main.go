@@ -65,14 +65,10 @@ func setHTTPClient() error {
 }
 
 // setSorifyHTTPClient initializes the dedicated HTTP client for Sorify trigger
-// calls. When --sorify-proxy is empty it falls back to --proxy so the default
-// behavior is unchanged when the new flag is not used.
+// calls. When --sorify-proxy is empty the client uses a direct connection
+// (no proxy); it never falls back to --proxy.
 func setSorifyHTTPClient() error {
-	proxy := f.SorifyProxy
-	if proxy == "" {
-		proxy = f.Proxy
-	}
-	client, err := buildHTTPClient(proxy)
+	client, err := buildHTTPClient(f.SorifyProxy)
 	if err != nil {
 		return err
 	}
