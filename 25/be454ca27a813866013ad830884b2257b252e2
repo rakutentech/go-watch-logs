@@ -1,0 +1,21 @@
+pkg/flags.go
+  s_1624be466a20b8::t_1c720f332e8373 61
+main.go
+  s_1624be466a20b8::t_2e5d45424236fa 68-69,71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "25be454ca27a813866013ad830884b2257b252e2",
+  "prompts": {},
+  "sessions": {
+    "s_1624be466a20b8": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_fbd18c374ffe1PMGnUMN5z7VRZ",
+        "model": "GLM-5.2-Coding"
+      },
+      "human_author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
