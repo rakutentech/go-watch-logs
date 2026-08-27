@@ -1,0 +1,26 @@
+pkg/msteams_test.go
+  s_3d4a1712a517ef::t_1279d896487746 327-328
+pkg/msteams.go
+  s_3d4a1712a517ef::t_f9f235e46c77ac 137
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "533e6509c420d5dddaa23701f404112947640608",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_3d4a1712a517ef": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_fbf40bbe3ffeXCzo3W0YbFn4pI",
+        "model": "GLM-5.2-Coding"
+      },
+      "human_author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
