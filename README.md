@@ -18,6 +18,8 @@
 
 **Scheduler:** Run it on a cron.
 
+**Sorify Support:** Trigger a browser test using [Sorify's Webhook](https://github.com/rakutentech/go-watch-logs)
+
 ### Install using go
 
 ```bash
@@ -73,6 +75,8 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
     	max number of file paths to watch (default 100)
   -file-recent-secs uint
     	only files modified in the last n seconds, 0 to disable (default 86400)
+  -git-url string
+    	git repo URL(s) (e.g. github.com/org/repo) for MS Teams issue button, comma-separated; encode any comma inside a URL as %2C
   -ignore string
     	regex for ignoring errors (empty to ignore none)
   -log-file string
@@ -99,6 +103,10 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
     	http proxy for webhooks
   -severity string
     	severity level for alerts (e.g. info, warning, error, critical) (default "error")
+  -sorify-run-trigger string
+    	sorify webhook trigger URL to POST on notify; response run_url becomes an MS Teams button (202: "Sorify run started", 409: "Sorify running")
+  -sorify-proxy string
+    	http proxy for the sorify-run-trigger URL (defaults to --proxy when empty)
   -streak int
     	on minimum num of streak matches, it should notify (default 1)
   -test
@@ -148,4 +156,6 @@ go test ./...
 - **v1.1.6** Supports longer regex patterns by splitting them
 - **v1.1.9** Pager Duty support
 - **v1.1.13** Pager Duty severity support from cli
+- **v1.1.14** Add a Git URL button that takes directly to Github Issue Page with context
+- **v1.1.15** Support browser testing trigger of [Sorify](https://github.com/rakutentech/go-watch-logs)
 

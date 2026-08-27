@@ -9,6 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testPatternError       = "error"
+	testPatternErrOccurred = "an error occurred"
+	testPatternErrOrWarn   = "error|warning"
+	testIP                 = "192.168.1.1"
+)
+
 func setupTempFile(content string) (string, error) {
 	tmpfile, err := os.CreateTemp("", "test.log")
 	if err != nil {
@@ -192,7 +199,7 @@ func TestSplitPattern(t *testing.T) {
 	}{
 		{
 			name:     "simple pattern with no pipes",
-			pattern:  "error",
+			pattern:  testPatternError,
 			expected: 1,
 		},
 		{
@@ -238,7 +245,7 @@ func TestSplitPattern(t *testing.T) {
 		{
 			name:     "pattern ending with escaped pipe",
 			pattern:  `error|warning\|`,
-			expected: 2, // "error" and "warning\|"
+			expected: 2, // testPatternError and "warning\|"
 		},
 		{
 			name:     "pattern starting with escaped pipe",
@@ -278,7 +285,7 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			pattern:     "error|warning|critical",
 			shouldSplit: false,
 			shouldError: false,
-			expectedMatch: []string{"error", "warning", "critical", "an error occurred", "warning: failed"},
+			expectedMatch: []string{testPatternError, severityWarning, severityCritical, testPatternErrOccurred, "warning: failed"},
 			expectedNoMatch: []string{"info", "debug", "success"},
 		},
 		{
@@ -296,7 +303,7 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			shouldSplit: true,
 			shouldError: false,
 			expectedMatch: []string{"error1", "error50", "error100", "found error1 in log"},
-			expectedNoMatch: []string{"error", "warning", "error0"},
+			expectedNoMatch: []string{testPatternError, severityWarning, "error0"},
 		},
 		{
 			name:        "empty pattern",
@@ -340,7 +347,7 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			expectedMatch: []string{
 				`error|warning|critical|fatal|panic|alert|emergency|disaster|catastrophe|failure|breakdown|malfunction|defect|fault|flaw|glitch|bug|issue|problem|trouble|difficulty|complication|obstacle|impediment|hindrance|barrier|blockage|stoppage|interruption|disruption|disturbance|interference|conflict|contradiction|inconsistency|discrepancy|anomaly|irregularity|deviation|aberration|abnormality|exception|violation|breach|infringement|transgression|offense|misdeed|wrongdoing|misconduct|malpractice|negligence|oversight|omission|mistake|blunder|gaffe|slip|lapse|oversight`,
 			}, // Matches exact literal string with pipes
-			expectedNoMatch: []string{"error", "warning", "critical", "error|warning"},
+			expectedNoMatch: []string{testPatternError, severityWarning, severityCritical, testPatternErrOrWarn},
 		},
 		{
 			name: "mixed escaped and unescaped pipes - long pattern",
@@ -356,7 +363,7 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			shouldSplit: true,
 			shouldError: false,
 			expectedMatch: []string{`error|fatal`, `warning|alert`, `connection|socket`, `extra|pipe`},
-			expectedNoMatch: []string{"error", "warning", "random", "connection", "socket"},
+			expectedNoMatch: []string{testPatternError, severityWarning, "random", "connection", "socket"},
 		},
 		{
 			name:        "very long single alternative - no pipes",
@@ -366,7 +373,7 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			expectedMatch: []string{
 				"error occurred in module with very long description and many words and more words and even more words to make it exceed the threshold of 500 characters so that we can test the behavior when there are no pipe separators but the pattern is still very long and needs to be handled correctly by the compilation logic without attempting to split it into multiple parts because there are no pipe characters to split on at all in this entire long pattern string that we are testing",
 			},
-			expectedNoMatch: []string{"warning", "info", "error module"},
+			expectedNoMatch: []string{severityWarning, "info", "error module"},
 		},
 		{
 			name:        "many short alternatives",
@@ -374,15 +381,15 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			shouldSplit: false, // Total length < 500
 			shouldError: false,
 			expectedMatch: []string{"a", "z", "aa", "zzz", "found a in log", "the zzz value", "aaaa"}, // aaaa contains aaa
-			expectedNoMatch: []string{"A", "1", "ERROR"},
+			expectedNoMatch: []string{"A", "1", SlogErrorLabel},
 		},
 		{
 			name:        "pattern with special regex characters",
 			pattern:     `\d+\.\d+\.\d+\.\d+|ERROR|WARNING|CRITICAL|[0-9]{4}-[0-9]{2}-[0-9]{2}`,
 			shouldSplit: false,
 			shouldError: false,
-			expectedMatch: []string{"192.168.1.1", "ERROR", "2024-01-01"},
-			expectedNoMatch: []string{"192.168", "error", "2024/01/01"},
+			expectedMatch: []string{testIP, SlogErrorLabel, "2024-01-01"},
+			expectedNoMatch: []string{"192.168", testPatternError, "2024/01/01"},
 		},
 		{
 			name:        "pattern with Unicode characters",
@@ -390,14 +397,14 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			shouldSplit: false,
 			shouldError: false,
 			expectedMatch: []string{"错误", "エラー", "오류"},
-			expectedNoMatch: []string{"error", "warning"},
+			expectedNoMatch: []string{testPatternError, severityWarning},
 		},
 		{
 			name:        "pattern with empty alternatives",
 			pattern:     "error||warning|||critical",
 			shouldSplit: false,
 			shouldError: false,
-			expectedMatch: []string{"error", "warning", "critical", "", "x"}, // Empty string matches empty alternative
+			expectedMatch: []string{testPatternError, severityWarning, severityCritical, "", "x"}, // Empty string matches empty alternative
 			expectedNoMatch: []string{},
 		},
 		{
@@ -405,7 +412,7 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			pattern:     `\berror\b|\bwarning\b|\bcritical\b`,
 			shouldSplit: false,
 			shouldError: false,
-			expectedMatch: []string{"error", "warning", "critical", "an error occurred"},
+			expectedMatch: []string{testPatternError, severityWarning, severityCritical, testPatternErrOccurred},
 			expectedNoMatch: []string{"errors", "warnings", "critically"},
 		},
 		{
@@ -413,7 +420,7 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			pattern:     "^error|^warning|^critical|^fatal",
 			shouldSplit: false,
 			shouldError: false,
-			expectedMatch: []string{"error", "warning at start"},
+			expectedMatch: []string{testPatternError, "warning at start"},
 			expectedNoMatch: []string{"an error", "the warning"},
 		},
 		{
@@ -421,7 +428,7 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			pattern:     "error+|warn(ing)?|critical{1,3}",
 			shouldSplit: false,
 			shouldError: false,
-			expectedMatch: []string{"error", "errorr", "errorrr", "warn", "warning", "an error occurred", "warn user", "critical issue"},
+			expectedMatch: []string{testPatternError, "errorr", "errorrr", "warn", severityWarning, testPatternErrOccurred, "warn user", "critical issue"},
 			expectedNoMatch: []string{"erro", "wrn", "critik"},
 		},
 		{
@@ -429,8 +436,8 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			pattern:     "[Ee]rror|[Ww]arning|[Cc]ritical",
 			shouldSplit: false,
 			shouldError: false,
-			expectedMatch: []string{"Error", "error", "Warning", "warning"},
-			expectedNoMatch: []string{"ERROR", "WARNING"},
+			expectedMatch: []string{"Error", testPatternError, "Warning", severityWarning},
+			expectedNoMatch: []string{SlogErrorLabel, "WARNING"},
 		},
 		{
 			name: "very long pattern with complex regex",
@@ -451,7 +458,7 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			shouldSplit: true,
 			shouldError: false,
 			expectedMatch: []string{"2024-01-01T12:00:00 ERROR", "2024-01-01T12:00:00 WARN", "2024-01-01T12:00:00 some message CRASH"},
-			expectedNoMatch: []string{"2024-01-01 ERROR", "ERROR", "12:00:00 ERROR"},
+			expectedNoMatch: []string{"2024-01-01 ERROR", SlogErrorLabel, "12:00:00 ERROR"},
 		},
 		{
 			name:        "pattern with lookahead (not supported in Go)",
@@ -493,7 +500,7 @@ func TestSplitAndCompilePattern(t *testing.T) {
 			shouldSplit: false,
 			shouldError: false,
 			expectedMatch: []string{"a_very_long_single_pattern_without_any_pipe_separators_that_exceeds_the_threshold_of_500_characters_by_being_extremely_verbose_and_containing_many_words_and_underscores_to_make_it_longer_and_longer_until_it_finally_reaches_the_required_length_for_testing_purposes_and_to_ensure_that_the_splitting_logic_handles_single_alternatives_correctly_without_attempting_to_split_them_into_multiple_parts_because_there_are_no_pipe_characters_present_in_this_entire_string_at_all_which_makes_it_impossible_to_split_on_anything_other_than_the_pattern_itself"},
-			expectedNoMatch: []string{"error", "warning", "short"},
+			expectedNoMatch: []string{testPatternError, severityWarning, "short"},
 		},
 	}
 
@@ -552,7 +559,7 @@ func TestSplitAndCompilePattern(t *testing.T) {
 func TestMatchesAny(t *testing.T) {
 	filePath := "test.log"
 	f := Flags{
-		Match:  "error|warning",
+		Match:  testPatternErrOrWarn,
 		Ignore: "ignore",
 	}
 
@@ -594,7 +601,7 @@ func TestMatchesAny(t *testing.T) {
 
 func TestEscapedPipeInActualMatching(t *testing.T) {
 	// Test that escaped pipes work correctly in actual log scanning
-	// The pattern should match literal "error|warning" but not "errorXwarning"
+	// The pattern should match literal testPatternErrOrWarn but not "errorXwarning"
 	content := `line1
 error|warning found
 line2
@@ -606,7 +613,7 @@ error or warning
 	assert.NoError(t, err)
 	defer os.Remove(filePath)
 
-	// Pattern with escaped pipe - should match literal "error|warning"
+	// Pattern with escaped pipe - should match literal testPatternErrOrWarn
 	matchPattern := `error\|warning`
 
 	f := Flags{
@@ -641,7 +648,7 @@ info found
 	assert.NoError(t, err)
 	defer os.Remove(filePath)
 
-	// Pattern with unescaped pipe - should match "error" OR "warning"
+	// Pattern with unescaped pipe - should match testPatternError OR "warning"
 	matchPattern := `error|warning`
 
 	f := Flags{
@@ -669,7 +676,7 @@ func TestLongPatternPerformance(t *testing.T) {
 		if i > 0 {
 			longPattern += "|"
 		}
-		longPattern += "error" + string(rune('A'+i%26))
+		longPattern += testPatternError + string(rune('A'+i%26))
 	}
 
 	content := "line1\nerrorA\nline2\nerrorB\nline3\n"

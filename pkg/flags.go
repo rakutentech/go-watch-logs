@@ -13,20 +13,22 @@ type Flags struct {
 	PostCommand    string
 	LogFile        string
 
-	Min                int
-	Streak             int
-	Every              uint64
-	Proxy              string
-	LogLevel           int
-	MemLimit           int
-	MSTeamsHook        string
-	GitURL             string
-	PagerDutyKey       string
-	PagerDutyDedupKey  string
-	MaxBufferMB        int
-	Severity           string
-	Test               bool
-	Version            bool
+	Min               int
+	Streak            int
+	Every             uint64
+	Proxy             string
+	LogLevel          int
+	MemLimit          int
+	MSTeamsHook       string
+	GitURL            string
+	SorifyRunTrigger  string
+	SorifyProxy       string
+	PagerDutyKey      string
+	PagerDutyDedupKey string
+	MaxBufferMB       int
+	Severity          string
+	Test              bool
+	Version           bool
 }
 
 func Parseflags(f *Flags) {
@@ -54,7 +56,9 @@ go-watch-logs --file-path=./ssl_access.*log --test
 
 	flag.StringVar(&f.Proxy, "proxy", "", "http proxy for webhooks")
 	flag.StringVar(&f.MSTeamsHook, "ms-teams-hook", "", "ms teams webhook")
-	flag.StringVar(&f.GitURL, "git-url", "", "git repo URL (e.g. github.com/org/repo) for MS Teams issue button")
+	flag.StringVar(&f.GitURL, "git-url", "", "git repo URL(s) (e.g. github.com/org/repo) for MS Teams issue button, comma-separated; encode any comma inside a URL as %2C")
+	flag.StringVar(&f.SorifyRunTrigger, "sorify-run-trigger", "", "sorify webhook trigger URL to POST https://github.com/sorify")
+	flag.StringVar(&f.SorifyProxy, "sorify-proxy", "", "http proxy for the sorify-run-trigger URL (defaults to --proxy when empty)")
 	flag.StringVar(&f.PagerDutyKey, "pagerduty-key", "", "pagerduty routing/integration key")
 	flag.StringVar(&f.PagerDutyDedupKey, "pagerduty-dedupkey", "", "pagerduty uniq key, for grpuping events")
 	flag.StringVar(&f.Severity, "severity", "error", "severity level for alerts (e.g. info, warning, error, critical)")
