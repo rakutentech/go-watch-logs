@@ -1,0 +1,110 @@
+pkg/msteams_test.go
+  s_2812c2dcb34802::t_4dab0e7673b8fd 286,301
+  s_2812c2dcb34802::t_fca6f0890b2559 475
+  s_2812c2dcb34802::t_6ca914d104b269 537
+  s_2812c2dcb34802::t_bd8448e64e5574 426
+  s_2812c2dcb34802::t_9ac9507f64fc82 334
+  s_2812c2dcb34802::t_482bbf23f3cf33 388,391-393
+  h_f44dfe84a46cdf 61,80,110,128,161,190,213,232,327-328,553-554,570,597-599
+  s_2812c2dcb34802::t_93c7e983a24cd9 502
+  s_2812c2dcb34802::t_50704c4852a753 333,336
+  s_2812c2dcb34802::t_91eb742dc2eacd 395-396
+  s_2812c2dcb34802::t_cddf35ba9807f9 557-558
+  s_2812c2dcb34802::t_ab57e04977a964 365-366
+  s_9fd0585fe0799a::t_c7f36eb6ff961b 343-344
+  s_9fd0585fe0799a::t_04d725fcd86c64 267-268
+  s_2812c2dcb34802::t_fefa8c4ab0ab66 579
+  s_2812c2dcb34802::t_9a5fce1ca9a911 413
+  s_9fd0585fe0799a::t_54532cf86fcb93 329
+  s_2812c2dcb34802::t_79dd82d9923882 37-38,58,345-357,359-360,364,367-387,389-390,394,397-400,403-412,414-425,427-439,441-456,458-465,467-474,481-483,486-494,496-499,512,514-516,519-535,541,543-552,555-556,559-569,571-577,583-591,593-596,600-601
+  s_2812c2dcb34802::t_cdf08a35800483 313
+  s_2812c2dcb34802::t_abd1b6eb028727 484-485
+  s_2812c2dcb34802::t_d634f92daada0d 401-402
+  s_2812c2dcb34802::t_3659e914c76441 440
+  s_2812c2dcb34802::t_68e578734a9bca 517-518
+  s_2812c2dcb34802::t_a83a7fb7a4480e 6
+  s_9fd0585fe0799a::t_d219c9213e29bf 36,76-77,123,253-266,269-285,287-300,302-312,314-326,330-332,335,337-342
+  s_2812c2dcb34802::t_db6c9424971335 358,361-363
+  s_2812c2dcb34802::t_0ba4a4fa553322 466,476-480,495,500-501,503-507,509-511,513,536,538-540,542,578,580-582,592
+  s_2812c2dcb34802::t_2ee0f605aaee13 457
+  s_2812c2dcb34802::t_ea859e149d7358 508
+  s_2812c2dcb34802::t_58a020541241b6 39
+  s_2812c2dcb34802::t_9cae16a205f42e 57
+  s_9fd0585fe0799a::t_0076f9832aded1 122
+pkg/flags.go
+  h_f44dfe84a46cdf 59
+  s_9fd0585fe0799a::t_0dfadf0d9c7bc5 58
+  s_9fd0585fe0799a::t_872eb9911fb112 16-23,25-30
+  s_2812c2dcb34802::t_d99af0a6ac9fd3 24
+.gitignore
+  h_f44dfe84a46cdf 30-32
+README.md
+  h_f44dfe84a46cdf 21-22,157-158
+  s_2812c2dcb34802::t_d8c54db44c2bb5 107
+  s_9fd0585fe0799a::t_18b8b28f9a2ae0 79
+  s_2812c2dcb34802::t_ca75cab7e0346d 106
+  s_9fd0585fe0799a::t_d80b593b1c4c4a 78
+pkg/msteams.go
+  s_2812c2dcb34802::t_609d8b9356a608 101-102,143-156,159,170-171,173-177,179-183,185-186,190-191,193-195,197-201,203,205-207,209,224
+  s_9fd0585fe0799a::t_7a960fdbfe75af 137-139,202
+  s_2812c2dcb34802::t_59ebc415b28a0a 89,96,214
+  s_3d4a1712a517ef::t_32793a9ceb2624 188
+  h_f44dfe84a46cdf 133
+  s_2812c2dcb34802::t_0a4a6114bffb04 165-168
+  s_9fd0585fe0799a::t_327b76aff1cbd7 105-107,122-132,134,136,140-142
+  s_9fd0585fe0799a::t_994d5209e27271 73
+  s_2812c2dcb34802::t_51596fd63d0240 23,91,160-164,169,172,178,184,204,208
+  s_2812c2dcb34802::t_342b08e8ea8219 187,189,192,196,210
+  s_2812c2dcb34802::t_cf1c5fd93c98cd 157-158
+  s_2812c2dcb34802::t_f0e681a7d4d12b 20-22
+  s_2812c2dcb34802::t_7d768635f6d70a 24-26
+  s_2812c2dcb34802::t_b84dbc431b59de 90
+  s_2812c2dcb34802::t_3390190c28ecd6 92-95
+  s_2812c2dcb34802::t_066cf00862eb99 97-100
+  s_2812c2dcb34802::t_0930f93374fa9a 211-213
+  s_2812c2dcb34802::t_dd59a2f109c535 225-227
+pkg/notify.go
+  s_2812c2dcb34802::t_1e7fe2402fdf8b 135
+  s_2812c2dcb34802::t_716b0f6423e464 8
+  s_2812c2dcb34802::t_1535fb30bf5b90 124-128,130,133-134,136,138-139,141-144,148
+  s_2812c2dcb34802::t_b91bb10920a870 129,131,140
+  h_f44dfe84a46cdf 137
+  s_3d4a1712a517ef::t_2a1b753deef737 132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "412a0060886486c60d92fa335f46cf21874f0e3e",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2812c2dcb34802": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_fc2453653ffemP5Q202fIfrHJE",
+        "model": "GLM-5.2-Coding"
+      },
+      "human_author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    },
+    "s_3d4a1712a517ef": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_fbf40bbe3ffeXCzo3W0YbFn4pI",
+        "model": "GLM-5.2-Coding"
+      },
+      "human_author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    },
+    "s_9fd0585fe0799a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_fc4542c14ffeK9Ty0hIgmuG5QK",
+        "model": "GLM-5.2-Coding"
+      },
+      "human_author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
