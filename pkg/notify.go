@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -30,7 +31,7 @@ func NotifyOwnErrorToPagerDuty(e error, r slog.Record, pagerDutyKey string, http
 	slog.Info("Successfully sent own error to PagerDuty", "status", status)
 }
 
-func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client) {
+func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client, sorifyHTTPClient *http.Client) {
 	hostname, _ := os.Hostname()
 
 	details := []Details{
@@ -120,10 +121,31 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 	}
 	slog.Debug("Sending Alert Notify", logDetails...)
 
+	// Trigger Sorify run (independent of MS Teams hook — the run is triggered
+	// even when no teams hook is configured, so the test suite stays in sync).
+	var sorifyAction *teamsAction
+	if trimmed := strings.TrimSpace(f.SorifyRunTrigger); trimmed != "" {
+		slog.Info("Triggering Sorify run", "triggerURL", trimmed)
+		btn, statusCode, err := triggerSorifyRun(trimmed, sorifyHTTPClient)
+		if err != nil {
+			slog.Warn("Sorify trigger failed; adding error button", "triggerURL", trimmed, "statusCode", statusCode)
+			slog.Debug("sorify trigger error", "error", err)
+			sorifyAction = &teamsAction{
+				Type:  actionTypeOpenURL,
+				Title: sorifyTriggerFailedTitle,
+				URL:   trimmed,
+				Style: "destructive",
+			}
+		} else {
+			slog.Info("Sorify run triggered", "runURL", btn.URL, "buttonTitle", btn.Title, "statusCode", statusCode)
+			sorifyAction = &btn
+		}
+	}
+
 	// Send to MS Teams
 	if f.MSTeamsHook != "" {
 		slog.Info("Sending scan results to MS Teams")
-		err := sendToTeams(hostname, details, f.GitURL, f.MSTeamsHook, httpClient)
+		err := sendToTeams(hostname, details, f.GitURL, sorifyAction, f.MSTeamsHook, httpClient)
 		if err != nil {
 			// keep it warn to prevent infinite loop from the global handler of slog
 			slog.Warn("Error sending to Teams", "error", err.Error())

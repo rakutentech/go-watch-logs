@@ -26,12 +26,12 @@ func TestSearchIPAddresses(t *testing.T) {
 		{
 			name:     "single IP",
 			input:    "Error from 192.168.1.1",
-			expected: []string{"192.168.1.1"},
+			expected: []string{testIP},
 		},
 		{
 			name:     "multiple IPs",
 			input:    "Connection from 192.168.1.1 to 10.0.0.1 failed",
-			expected: []string{"192.168.1.1", "10.0.0.1"},
+			expected: []string{testIP, "10.0.0.1"},
 		},
 		{
 			name:     "no IPs",
@@ -255,7 +255,7 @@ func TestIPToUint32(t *testing.T) {
 		},
 		{
 			name:     "private IP",
-			ip:       "192.168.1.1",
+			ip:       testIP,
 			expected: 3232235777,
 		},
 		{
@@ -566,7 +566,7 @@ func TestSearchIPAddresses_RealWorldLogs(t *testing.T) {
 		{
 			name:     "Apache access log",
 			logLine:  `192.168.1.1 - - [06/Jan/2025:10:15:23 +0000] "GET /index.html HTTP/1.1" 200 1234`,
-			expected: []string{"192.168.1.1"},
+			expected: []string{testIP},
 		},
 		{
 			name:     "Nginx error log",

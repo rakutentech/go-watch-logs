@@ -33,25 +33,50 @@ var geoIPDB *pkg.GeoIPDatabase
 
 var httpClient *http.Client
 
-// setHTTPClient initializes the singleton HTTP client with timeout and proxy configuration
-func setHTTPClient() error {
+// sorifyHTTPClient is a dedicated client for Sorify trigger calls, which may
+// need to run through a different proxy than the MS Teams / PagerDuty client.
+var sorifyHTTPClient *http.Client
+
+// buildHTTPClient constructs an *http.Client with the given proxy (may be empty
+// for a direct connection) and a 3-second timeout.
+func buildHTTPClient(proxy string) (*http.Client, error) {
 	timeout := time.Duration(3 * time.Second)
 
-	if f.Proxy == "" {
-		httpClient = &http.Client{
-			Timeout: timeout,
-		}
-		return nil
+	if proxy == "" {
+		return &http.Client{Timeout: timeout}, nil
 	}
-	proxy, err := url.Parse(f.Proxy)
+	proxyURL, err := url.Parse(proxy)
+	if err != nil {
+		return nil, err
+	}
+	transport := &http.Transport{Proxy: http.ProxyURL(proxyURL)}
+	return &http.Client{Transport: transport, Timeout: timeout}, nil
+}
+
+// setHTTPClient initializes the singleton HTTP client (used by MS Teams and
+// PagerDuty) with timeout and proxy configuration.
+func setHTTPClient() error {
+	client, err := buildHTTPClient(f.Proxy)
 	if err != nil {
 		return err
 	}
-	transport := &http.Transport{Proxy: http.ProxyURL(proxy)}
-	httpClient = &http.Client{
-		Transport: transport,
-		Timeout:   timeout,
+	httpClient = client
+	return nil
+}
+
+// setSorifyHTTPClient initializes the dedicated HTTP client for Sorify trigger
+// calls. When --sorify-proxy is empty it falls back to --proxy so the default
+// behavior is unchanged when the new flag is not used.
+func setSorifyHTTPClient() error {
+	proxy := f.SorifyProxy
+	if proxy == "" {
+		proxy = f.Proxy
 	}
+	client, err := buildHTTPClient(proxy)
+	if err != nil {
+		return err
+	}
+	sorifyHTTPClient = client
 	return nil
 }
 
@@ -63,6 +88,11 @@ func main() {
 
 	if err := setHTTPClient(); err != nil {
 		slog.Error("Failed to set HTTP client", "error", err.Error())
+		return
+	}
+
+	if err := setSorifyHTTPClient(); err != nil {
+		slog.Error("Failed to set Sorify HTTP client", "error", err.Error())
 		return
 	}
 
@@ -236,7 +266,7 @@ func reportResult(result *pkg.ScanResult) {
 	}
 
 	if pkg.IsRecentlyModified(result.FileInfo, f.Every) {
-		pkg.Notify(result, f, version, httpClient)
+		pkg.Notify(result, f, version, httpClient, sorifyHTTPClient)
 	}
 }
 

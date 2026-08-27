@@ -7,6 +7,26 @@ import (
 	"testing"
 )
 
+const (
+	severityError    = "error"
+	severityWarning  = "warning"
+	severityInfo     = "info"
+	severityCritical = "critical"
+
+	fieldString    = "string_field"
+	fieldInt       = "int_field"
+	fieldFloat     = "float_field"
+	fieldBool      = "bool_field"
+	fieldArray     = "array_field"
+	fieldNested    = "nested_key"
+	fieldNestedObj = "nested_object"
+
+	testValue     = "value"
+	testItem1     = "item1"
+	testItem2     = "item2"
+	testNestedVal = "nested_value"
+)
+
 // mockHTTPClient is a mock implementation of http.Client for testing
 type mockHTTPClient struct {
 	response *http.Response
@@ -68,9 +88,9 @@ func TestPagerDuty_Send_Success(t *testing.T) {
 		{
 			name:       "successful event with all fields",
 			summary:    "Test Alert",
-			details:    map[string]any{"key": "value", "count": 42},
+			details:    map[string]any{"key": testValue, "count": 42},
 			routingKey: "test-routing-key",
-			severity:   "error",
+			severity:   severityError,
 			dedupKey:   "test-dedup-key",
 			statusCode: 202,
 			body:       `{"status":"success","message":"Event processed","dedup_key":"test-dedup-key"}`,
@@ -80,7 +100,7 @@ func TestPagerDuty_Send_Success(t *testing.T) {
 			summary:    "Minimal Alert",
 			details:    map[string]any{},
 			routingKey: "minimal-key",
-			severity:   "warning",
+			severity:   severityWarning,
 			dedupKey:   "",
 			statusCode: 202,
 			body:       `{"status":"success"}`,
@@ -88,9 +108,9 @@ func TestPagerDuty_Send_Success(t *testing.T) {
 		{
 			name:       "successful event with info severity",
 			summary:    "Info Alert",
-			details:    map[string]any{"info": "test"},
+			details:    map[string]any{severityInfo: "test"},
 			routingKey: "info-key",
-			severity:   "info",
+			severity:   severityInfo,
 			dedupKey:   "info-dedup",
 			statusCode: 202,
 			body:       `{"status":"success","message":"Event processed"}`,
@@ -98,9 +118,9 @@ func TestPagerDuty_Send_Success(t *testing.T) {
 		{
 			name:       "successful event with critical severity",
 			summary:    "Critical Alert",
-			details:    map[string]any{"critical": true},
+			details:    map[string]any{severityCritical: true},
 			routingKey: "critical-key",
-			severity:   "critical",
+			severity:   severityCritical,
 			dedupKey:   "critical-dedup",
 			statusCode: 202,
 			body:       `{"status":"success"}`,
@@ -137,19 +157,19 @@ func TestPagerDuty_Send_WithComplexDetails(t *testing.T) {
 	mockClient := createMockHTTPClient(202, `{"status":"success"}`, nil)
 
 	details := map[string]any{
-		"string_field":  "value",
-		"int_field":     123,
-		"float_field":   45.67,
-		"bool_field":    true,
-		"array_field":   []string{"item1", "item2"},
-		"nested_object": map[string]any{"nested_key": "nested_value"},
+		fieldString:  testValue,
+		fieldInt:     123,
+		fieldFloat:   45.67,
+		fieldBool:    true,
+		fieldArray:   []string{testItem1, testItem2},
+		fieldNestedObj: map[string]any{fieldNested: testNestedVal},
 	}
 
 	status, err := pd.Send(
 		"Complex Details Test",
 		details,
 		"test-key",
-		"error",
+		severityError,
 		"complex-dedup",
 		mockClient,
 	)
@@ -171,7 +191,7 @@ func TestPagerDuty_Send_WithNilDetails(t *testing.T) {
 		"Nil Details Test",
 		nil,
 		"test-key",
-		"warning",
+		severityWarning,
 		"nil-dedup",
 		mockClient,
 	)
@@ -208,7 +228,7 @@ func TestPagerDuty_Send_WithEmptyStrings(t *testing.T) {
 }
 
 func TestPagerDuty_Send_DifferentSeverities(t *testing.T) {
-	severities := []string{"critical", "error", "warning", "info"}
+	severities := []string{severityCritical, severityError, severityWarning, severityInfo}
 	pd := NewPagerDuty()
 
 	for _, severity := range severities {
@@ -246,7 +266,7 @@ func BenchmarkPagerDuty_Send_Simple(b *testing.B) {
 			"Benchmark Test",
 			map[string]any{"iteration": i},
 			"bench-key",
-			"error",
+			severityError,
 			"bench-dedup",
 			mockClient,
 		)
@@ -258,12 +278,12 @@ func BenchmarkPagerDuty_Send_ComplexDetails(b *testing.B) {
 	mockClient := createMockHTTPClient(202, `{"status":"success"}`, nil)
 
 	details := map[string]any{
-		"string_field":  "value",
-		"int_field":     123,
-		"float_field":   45.67,
-		"bool_field":    true,
-		"array_field":   []string{"item1", "item2", "item3"},
-		"nested_object": map[string]any{"nested_key": "nested_value"},
+		fieldString:  testValue,
+		fieldInt:     123,
+		fieldFloat:   45.67,
+		fieldBool:    true,
+		fieldArray:   []string{testItem1, testItem2, "item3"},
+		fieldNestedObj: map[string]any{fieldNested: testNestedVal},
 		"large_array":   make([]int, 100),
 	}
 
@@ -273,7 +293,7 @@ func BenchmarkPagerDuty_Send_ComplexDetails(b *testing.B) {
 			"Benchmark Complex Test",
 			details,
 			"bench-key",
-			"error",
+			severityError,
 			"bench-dedup-complex",
 			mockClient,
 		)
@@ -290,7 +310,7 @@ func BenchmarkPagerDuty_Send_MinimalData(b *testing.B) {
 			"Minimal",
 			nil,
 			"key",
-			"error",
+			severityError,
 			"",
 			mockClient,
 		)
@@ -313,7 +333,7 @@ func BenchmarkPagerDuty_Send_LargeSummary(b *testing.B) {
 			summary,
 			map[string]any{"test": "data"},
 			"bench-key",
-			"error",
+			severityError,
 			"bench-dedup-large",
 			mockClient,
 		)
@@ -336,7 +356,7 @@ func BenchmarkPagerDuty_Send_ManyDetails(b *testing.B) {
 			"Many Details Test",
 			details,
 			"bench-key",
-			"error",
+			severityError,
 			"bench-dedup-many",
 			mockClient,
 		)
@@ -363,7 +383,7 @@ func BenchmarkPagerDuty_Send_Parallel(b *testing.B) {
 				"Parallel Benchmark Test",
 				map[string]any{"iteration": i},
 				"bench-key",
-				"error",
+				severityError,
 				"bench-dedup-parallel",
 				mockClient,
 			)
@@ -377,12 +397,12 @@ func BenchmarkPagerDuty_Send_ParallelComplex(b *testing.B) {
 	mockClient := createMockHTTPClient(202, `{"status":"success"}`, nil)
 
 	details := map[string]any{
-		"string_field":  "value",
-		"int_field":     123,
-		"float_field":   45.67,
-		"bool_field":    true,
-		"array_field":   []string{"item1", "item2", "item3"},
-		"nested_object": map[string]any{"nested_key": "nested_value"},
+		fieldString:  testValue,
+		fieldInt:     123,
+		fieldFloat:   45.67,
+		fieldBool:    true,
+		fieldArray:   []string{testItem1, testItem2, "item3"},
+		fieldNestedObj: map[string]any{fieldNested: testNestedVal},
 	}
 
 	b.ResetTimer()
@@ -392,7 +412,7 @@ func BenchmarkPagerDuty_Send_ParallelComplex(b *testing.B) {
 				"Parallel Complex Benchmark",
 				details,
 				"bench-key",
-				"error",
+				severityError,
 				"bench-dedup-parallel-complex",
 				mockClient,
 			)

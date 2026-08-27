@@ -17,6 +17,14 @@ type Details struct {
 	Message string
 }
 
+const (
+	actionTypeOpenURL          = "Action.OpenUrl"
+	actionStylePositive        = "positive"
+	sorifyRunStartedTitle      = "Sorify run started"
+	sorifyRunningTitle         = "Sorify running"
+	sorifyTriggerFailedTitle   = "Sorify trigger failed"
+)
+
 type teamsCard struct {
 	Type        string            `json:"type"`
 	Attachments []teamsAttachment `json:"attachments"`
@@ -62,6 +70,7 @@ type teamsAction struct {
 	Type  string `json:"type"`
 	Title string `json:"title"`
 	URL   string `json:"url"`
+	Style string `json:"style,omitempty"`
 }
 
 type teamsMSTeams struct {
@@ -77,10 +86,25 @@ func normalizeGitURL(rawURL string) string {
 	return "https://" + u
 }
 
-func actionButton(title string, details []Details, gitURL string) []teamsAction {
-	if gitURL == "" {
+func splitURLs(s string) []string {
+	parts := strings.Split(s, ",")
+	var out []string
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func actionButton(title string, details []Details, gitURLs []string) []teamsAction {
+	if len(gitURLs) == 0 {
 		return nil
 	}
+
+	var actions []teamsAction
+
 	var filePath, match, ignore, lines string
 	for _, d := range details {
 		switch d.Label {
@@ -95,32 +119,113 @@ func actionButton(title string, details []Details, gitURL string) []teamsAction 
 		}
 	}
 	issueBody := fmt.Sprintf("**File:** %s\n**Match:** %s\n**Ignore:** %s\n\n**Lines:**\n```\n%s\n```", filePath, match, ignore, lines)
-	q := url.Values{}
-	q.Set("title", title)
-	q.Set("body", issueBody)
-	q.Set("labels", "go-watch-logs")
-	normalizedURL := normalizeGitURL(gitURL)
-	issueURL := normalizedURL + "/issues/new?" + q.Encode()
-	buttonTitle := "Create issue"
-	if parsed, err := url.Parse(normalizedURL); err == nil {
-		if orgRepo := strings.TrimLeft(parsed.Path, "/"); orgRepo != "" {
-			buttonTitle = "Create Issue on " + orgRepo
+
+	for _, gitURL := range gitURLs {
+		q := url.Values{}
+		q.Set("title", title)
+		q.Set("body", issueBody)
+		q.Set("labels", "go-watch-logs")
+		normalizedURL := normalizeGitURL(gitURL)
+		issueURL := normalizedURL + "/issues/new?" + q.Encode()
+		buttonTitle := "Create issue"
+		if parsed, err := url.Parse(normalizedURL); err == nil {
+			if orgRepo := strings.TrimLeft(parsed.Path, "/"); orgRepo != "" {
+				buttonTitle = "Create issue on " + orgRepo
+			}
 		}
+		actions = append(actions, teamsAction{
+			Type:  actionTypeOpenURL,
+			Title: buttonTitle,
+			URL:   issueURL,
+		})
 	}
-	return []teamsAction{{
-		Type:  "Action.OpenUrl",
-		Title: buttonTitle,
-		URL:   issueURL,
-	}}
+
+	return actions
 }
 
-func sendToTeams(title string, details []Details, gitURL, hookURL string, httpClient *http.Client) error {
+// sorifyTriggerResponse is the JSON body returned by a Sorify webhook trigger endpoint.
+// Both 202 (run started) and 409 (run already in progress) responses include run_url.
+type sorifyTriggerResponse struct {
+	RunID     int    `json:"run_id"`
+	RunURL    string `json:"run_url"`
+	Status    string `json:"status"`
+	Message   string `json:"message,omitempty"`
+	StatusURL string `json:"status_url,omitempty"`
+}
+
+// triggerSorifyRun POSTs to the trigger URL and builds an MS Teams button from the response.
+//   - 202 -> "Sorify run started" button (positive/green) pointing at run_url
+//   - 409 -> "Sorify running" button (default/neutral) pointing at run_url
+//
+// Returns the HTTP status code, a button, and an error. The error is non-nil for
+// any status code other than 202/409, network failure, malformed body, or when
+// run_url is missing. On a network failure the status code is 0.
+// The trigger URL is POSTed verbatim (query params like ?test_ids=1,2,3 are
+// preserved); run_url from the response is used verbatim.
+//
+// Note: the only valid AdaptiveCard action styles are "default", "positive", and
+// "destructive" — "warning" is not a valid value and causes Teams to reject the
+// entire card.
+func triggerSorifyRun(triggerURL string, httpClient *http.Client) (teamsAction, int, error) {
+	req, err := http.NewRequest("POST", triggerURL, nil)
+	if err != nil {
+		return teamsAction{}, 0, fmt.Errorf("build sorify trigger request: %w", err)
+	}
+	req.Header.Set("Content-type", "application/json")
+
+	resp, err := httpClient.Do(req) //nolint:gosec // triggerURL is user-configured, not attacker-controlled
+	if err != nil {
+		return teamsAction{}, 0, fmt.Errorf("call sorify trigger: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return teamsAction{}, resp.StatusCode, fmt.Errorf("read sorify trigger response: %w", err)
+	}
+
+	slog.Info("Sorify trigger response", "statusCode", resp.StatusCode)
+	slog.Debug("sorify trigger response body", "body", string(body))
+
+	var sr sorifyTriggerResponse
+	if err := json.Unmarshal(body, &sr); err != nil {
+		return teamsAction{}, resp.StatusCode, fmt.Errorf("parse sorify trigger response (status %d, body %q): %w", resp.StatusCode, string(body), err)
+	}
+
+	if sr.RunURL == "" {
+		return teamsAction{}, resp.StatusCode, fmt.Errorf("sorify trigger response missing run_url (status %d, body %q)", resp.StatusCode, string(body))
+	}
+
+	switch resp.StatusCode {
+	case http.StatusAccepted: // 202
+		return teamsAction{
+			Type:  actionTypeOpenURL,
+			Title: sorifyRunStartedTitle,
+			URL:   sr.RunURL,
+			Style: actionStylePositive,
+		}, resp.StatusCode, nil
+	case http.StatusConflict: // 409
+		return teamsAction{
+			Type:  actionTypeOpenURL,
+			Title: sorifyRunningTitle,
+			URL:   sr.RunURL,
+		}, resp.StatusCode, nil
+	default:
+		return teamsAction{}, resp.StatusCode, fmt.Errorf("sorify trigger unexpected status %d (body %q)", resp.StatusCode, string(body))
+	}
+}
+
+func sendToTeams(title string, details []Details, gitURL string, sorifyAction *teamsAction, hookURL string, httpClient *http.Client) error {
 	facts := make([]teamsFact, len(details))
 	for i, d := range details {
 		facts[i] = teamsFact{Title: d.Label, Value: d.Message}
 	}
 
-	actions := actionButton(title, details, gitURL)
+	actions := actionButton(title, details, splitURLs(gitURL))
+
+	if sorifyAction != nil {
+		actions = append(actions, *sorifyAction)
+	}
 
 	card := teamsCard{
 		Type: "message",
@@ -197,7 +302,7 @@ func NotifyOwnErrorToTeams(e error, r slog.Record, msTeamsHook string, httpClien
 		return true
 	})
 
-	err := sendToTeams(hostname, details, "", msTeamsHook, httpClient)
+	err := sendToTeams(hostname, details, "", nil, msTeamsHook, httpClient)
 	if err != nil {
 		// keep it warn to prevent infinite loop from the global handler of slog
 		slog.Warn("Error sending to Teams", "error", err.Error())
