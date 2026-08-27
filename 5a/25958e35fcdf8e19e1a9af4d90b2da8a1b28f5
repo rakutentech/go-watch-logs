@@ -1,0 +1,95 @@
+pkg/msteams.go
+  s_9fd0585fe0799a::t_327b76aff1cbd7 97-99,114-124,126,128,132-134
+  s_2812c2dcb34802::t_51596fd63d0240 152-156,161,164,170,176,198,204
+  s_2812c2dcb34802::t_0a4a6114bffb04 157-160
+  s_2812c2dcb34802::t_609d8b9356a608 93-94,135-148,151,162-163,165-169,171-175,177-178,182-183,185-187,189-193,196,199-201,203,205,216-217,220
+  s_9fd0585fe0799a::t_d16ea432c08b5b 81-92
+  h_f44dfe84a46cdf 125,180
+  s_9fd0585fe0799a::t_7a960fdbfe75af 129-131,194,197
+  s_9fd0585fe0799a::t_994d5209e27271 65
+  s_2812c2dcb34802::t_18f4312fc17fee 297
+  s_2812c2dcb34802::t_59ebc415b28a0a 210,218-219
+  s_2812c2dcb34802::t_342b08e8ea8219 179,181,184,188,206
+  s_2812c2dcb34802::t_cf1c5fd93c98cd 149-150
+  s_2812c2dcb34802::t_bab83629edd40a 202
+  h_f44dfe84a46cdf 195
+pkg/notify.go
+  s_2812c2dcb34802::t_b91bb10920a870 129,131,140
+  s_2812c2dcb34802::t_1535fb30bf5b90 124-128,130,133-134,136,138-139,141-144,148
+  s_2812c2dcb34802::t_716b0f6423e464 8
+  h_f44dfe84a46cdf 132,137
+  s_2812c2dcb34802::t_1e7fe2402fdf8b 135
+README.md
+  s_2812c2dcb34802::t_ca75cab7e0346d 106
+  s_9fd0585fe0799a::t_18b8b28f9a2ae0 79
+  h_f44dfe84a46cdf 21-22,157-158
+  s_9fd0585fe0799a::t_d80b593b1c4c4a 78
+  s_2812c2dcb34802::t_d8c54db44c2bb5 107
+pkg/msteams_test.go
+  s_9fd0585fe0799a::t_04d725fcd86c64 257-258
+  h_f44dfe84a46cdf 317-318,543-544,560,587-589
+  s_2812c2dcb34802::t_482bbf23f3cf33 378,381-383
+  s_2812c2dcb34802::t_cdf08a35800483 303
+  s_9fd0585fe0799a::t_54532cf86fcb93 319
+  s_9fd0585fe0799a::t_c7f36eb6ff961b 333-334
+  s_2812c2dcb34802::t_0ba4a4fa553322 456,466-470,485,490-491,493-497,499-501,503,526,528-530,532,568,570-572,582
+  s_2812c2dcb34802::t_db6c9424971335 348,351-353
+  s_2812c2dcb34802::t_9ac9507f64fc82 324
+  s_2812c2dcb34802::t_79dd82d9923882 335-347,349-350,354,357-377,379-380,384,387-390,393-402,404-415,417-429,431-446,448-455,457-464,471-473,476-484,486-489,502,504-506,509-525,531,533-542,545-546,549-559,561-567,573-581,583-586,590-591
+  s_2812c2dcb34802::t_a83a7fb7a4480e 6
+  s_2812c2dcb34802::t_50704c4852a753 323,326
+  s_2812c2dcb34802::t_d634f92daada0d 391-392
+  s_9fd0585fe0799a::t_d219c9213e29bf 243-256,259-275,277-290,292-302,304-316,320-322,325,327-332
+  s_2812c2dcb34802::t_4dab0e7673b8fd 276,291
+  s_2812c2dcb34802::t_ab57e04977a964 355-356
+  s_2812c2dcb34802::t_91eb742dc2eacd 385-386
+  s_2812c2dcb34802::t_9a5fce1ca9a911 403
+  s_2812c2dcb34802::t_bd8448e64e5574 416
+  s_2812c2dcb34802::t_3659e914c76441 430
+  s_2812c2dcb34802::t_2ee0f605aaee13 447
+  s_2812c2dcb34802::t_fca6f0890b2559 465
+  s_2812c2dcb34802::t_abd1b6eb028727 474-475
+  s_2812c2dcb34802::t_93c7e983a24cd9 492
+  s_2812c2dcb34802::t_ea859e149d7358 498
+  s_2812c2dcb34802::t_68e578734a9bca 507-508
+  s_2812c2dcb34802::t_6ca914d104b269 527
+  s_2812c2dcb34802::t_cddf35ba9807f9 547-548
+  s_2812c2dcb34802::t_fefa8c4ab0ab66 569
+  h_f44dfe84a46cdf 51,70,100,118,151,180,203,222
+pkg/flags.go
+  s_2812c2dcb34802::t_d99af0a6ac9fd3 24
+  h_f44dfe84a46cdf 59
+  s_9fd0585fe0799a::t_0dfadf0d9c7bc5 58
+  s_9fd0585fe0799a::t_872eb9911fb112 16-23,25-30
+.gitignore
+  h_f44dfe84a46cdf 30-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "5a25958e35fcdf8e19e1a9af4d90b2da8a1b28f5",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2812c2dcb34802": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_fc2453653ffemP5Q202fIfrHJE",
+        "model": "GLM-5.2-Coding"
+      },
+      "human_author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    },
+    "s_9fd0585fe0799a": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_fc4542c14ffeK9Ty0hIgmuG5QK",
+        "model": "GLM-5.2-Coding"
+      },
+      "human_author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
