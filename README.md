@@ -18,7 +18,7 @@
 
 **Scheduler:** Run it on a cron.
 
-**Sorify Support:** Trigger a browser test using [Sorify's Webhook](https://github.com/rakutentech/go-watch-logs)
+**Sorify Support:** Trigger a browser test using [Sorify's Webhook](https://github.com/rakutentech/sorify)
 
 ### Install using go
 
@@ -157,5 +157,5 @@ go test ./...
 - **v1.1.9** Pager Duty support
 - **v1.1.13** Pager Duty severity support from cli
 - **v1.1.14** Add a Git URL button that takes directly to Github Issue Page with context
-- **v1.1.15** Support browser testing trigger of [Sorify](https://github.com/rakutentech/go-watch-logs)
+- **v1.1.15** Support browser testing trigger of [Sorify](https://github.com/rakutentech/sorify)
 
