@@ -1,0 +1,14 @@
+pkg/pagerduty_test.go
+  h_f44dfe84a46cdf 16,29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d76cbb3758515db315b516e4e04e2daa3a6da505",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
