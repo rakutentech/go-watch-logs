@@ -1,0 +1,18 @@
+geoip.csv
+  h_f44dfe84a46cdf 1-211762
+pkg/ip.go
+  h_f44dfe84a46cdf 47,64-65
+pkg/ip_test.go
+  h_f44dfe84a46cdf 10-17,95,107-108,114-115,157,164,171,178,185,384,391-393,400-401,413-414,456-457,467-468,503-504,534,554-555,611,628-629
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1a84fc5738fb9fbbe26445de026818efa6537f15",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
