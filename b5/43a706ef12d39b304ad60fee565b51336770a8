@@ -1,0 +1,40 @@
+pkg/msteams.go
+  s_191b6a36c19fe3::t_e93a54ed6de65e 26
+  s_191b6a36c19fe3::t_14039f5ab53a26 160-161,164,193-204
+  s_191b6a36c19fe3::t_2e256ae2a4c8d6 205
+pkg/msteams_test.go
+  s_1916770bd12dc9::t_cccad404ef7cd4 408
+  s_191b6a36c19fe3::t_df04685f8d3d99 426-429,431,439-440,442-443,445-446,449
+  s_191b6a36c19fe3::t_c6fa60c5eba554 379-407,409-425
+README.md
+  s_191b6a36c19fe3::t_0e74a874cf0e6c 107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b543a706ef12d39b304ad60fee565b51336770a8",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_1916770bd12dc9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f64da0ac8ffeP6m28bmK0S9pLo",
+        "model": "GLM-5.3-Coding"
+      },
+      "human_author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    },
+    "s_191b6a36c19fe3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f648388ffffew4T916lPp0p0ye",
+        "model": "GLM-5.3-Coding"
+      },
+      "human_author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
