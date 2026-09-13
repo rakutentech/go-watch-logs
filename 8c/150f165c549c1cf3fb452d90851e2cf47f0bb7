@@ -1,0 +1,24 @@
+main.go
+  h_f44dfe84a46cdf 38
+pkg/flags.go
+  h_f44dfe84a46cdf 23,57
+pkg/log.go
+  h_f44dfe84a46cdf 22-25,32
+pkg/msteams.go
+  h_f44dfe84a46cdf 1-207
+pkg/msteams_test.go
+  h_f44dfe84a46cdf 1-241
+pkg/notify.go
+  h_f44dfe84a46cdf 36,111,126,139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8c150f165c549c1cf3fb452d90851e2cf47f0bb7",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
