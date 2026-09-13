@@ -1,0 +1,20 @@
+README.md
+  h_f44dfe84a46cdf 84-85
+main.go
+  h_f44dfe84a46cdf 233-238
+pkg/flags.go
+  h_f44dfe84a46cdf 17,45
+pkg/notify.go
+  h_f44dfe84a46cdf 91-93,106,108,131,161
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "da95c85610765ad7ba88c04594ce06ad0288c381",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
