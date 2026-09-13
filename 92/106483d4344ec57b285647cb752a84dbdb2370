@@ -1,0 +1,16 @@
+pkg/log.go
+  h_f44dfe84a46cdf 32-37
+pkg/notify.go
+  h_f44dfe84a46cdf 15,17,19-32,34-41,43-44,46-48,50-68,70-73,75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "92106483d4344ec57b285647cb752a84dbdb2370",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
