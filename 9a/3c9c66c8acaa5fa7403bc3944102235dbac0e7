@@ -1,0 +1,16 @@
+main.go
+  h_f44dfe84a46cdf 37,48,50-51,58,66-69
+pkg/notify.go
+  h_f44dfe84a46cdf 125-138,170
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9a3c9c66c8acaa5fa7403bc3944102235dbac0e7",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
