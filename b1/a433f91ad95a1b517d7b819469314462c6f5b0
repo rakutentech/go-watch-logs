@@ -1,0 +1,16 @@
+pkg/notify.go
+  h_f44dfe84a46cdf 48-56,59-62,65,67,72,174-180,183-184,188
+pkg/pagerduty.go
+  h_f44dfe84a46cdf 1-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b1a433f91ad95a1b517d7b819469314462c6f5b0",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
