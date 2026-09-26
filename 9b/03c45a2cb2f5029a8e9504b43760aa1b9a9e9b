@@ -1,0 +1,20 @@
+README.md
+  h_f44dfe84a46cdf 107
+pkg/msteams.go
+  h_f44dfe84a46cdf 21-26,157-164
+pkg/msteams_test.go
+  h_f44dfe84a46cdf 453-474
+pkg/notify.go
+  h_f44dfe84a46cdf 124-127,129,133-136,153
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9b03c45a2cb2f5029a8e9504b43760aa1b9a9e9b",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
