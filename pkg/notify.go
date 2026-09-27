@@ -121,12 +121,20 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 	}
 	slog.Debug("Sending Alert Notify", logDetails...)
 
-	// Trigger Sorify run (independent of MS Teams hook — the run is triggered
-	// even when no teams hook is configured, so the test suite stays in sync).
+	// Trigger Sorify run (the run is triggered even when no MS Teams hook is
+	// configured, so the test suite stays in sync). The MS Teams message is only
+	// sent for "Sorify run started" (any 2xx status) and "Sorify trigger failed"
+	// outcomes; 409 (already running) and 429 (rate limited) skip the Teams
+	// notification.
 	var sorifyAction *teamsAction
+	sendTeams := true
 	if trimmed := strings.TrimSpace(f.SorifyRunTrigger); trimmed != "" {
 		slog.Info("Triggering Sorify run", "triggerURL", trimmed)
 		btn, statusCode, err := triggerSorifyRun(trimmed, sorifyHTTPClient)
+		if !notifyTeamsForSorify(statusCode, err) {
+			slog.Warn("Skipping MS Teams notify for sorify outcome", "statusCode", statusCode)
+			sendTeams = false
+		}
 		if err != nil {
 			slog.Warn("Sorify trigger failed; adding error button", "triggerURL", trimmed, "statusCode", statusCode)
 			slog.Debug("sorify trigger error", "error", err)
@@ -143,7 +151,7 @@ func Notify(result *ScanResult, f Flags, version string, httpClient *http.Client
 	}
 
 	// Send to MS Teams
-	if f.MSTeamsHook != "" {
+	if f.MSTeamsHook != "" && sendTeams {
 		slog.Info("Sending scan results to MS Teams")
 		err := sendToTeams(hostname, details, f.GitURL, sorifyAction, f.MSTeamsHook, httpClient)
 		if err != nil {

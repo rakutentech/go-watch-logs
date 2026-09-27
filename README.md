@@ -104,7 +104,7 @@ go-watch-logs --file-path=my.log --match='HTTP/1.1" 50' --every=60
   -severity string
     	severity level for alerts (e.g. info, warning, error, critical) (default "error")
   -sorify-run-trigger string
-    	sorify webhook trigger URL to POST on notify; response run_url becomes an MS Teams button (202: "Sorify run started", 409: "Sorify running")
+     	sorify webhook trigger URL to POST on notify; response run_url becomes an MS Teams button (202: "Sorify run started", 409: "Sorify running", 429: "Sorify rate limited"); MS Teams is only notified on 202 (run started) and trigger failure — 409/429 skip the Teams message
   -sorify-proxy string
     	http proxy for the sorify-run-trigger URL (defaults to --proxy when empty)
   -streak int

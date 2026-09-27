@@ -376,12 +376,96 @@ func TestTriggerSorifyRun_Success202(t *testing.T) {
 	}
 }
 
-func TestTriggerSorifyRun_Conflict409(t *testing.T) {
-	runURL := "http://localhost:8000/sorify/runs/97"
+func TestTriggerSorifyRun_Success2xx(t *testing.T) {
+	// Any 2xx status (not just 202) is treated as "run started".
+	tests := []int{
+		http.StatusOK,       // 200
+		http.StatusCreated,  // 201
+		http.StatusAccepted, // 202
+	}
+	for _, statusCode := range tests {
+		t.Run(fmt.Sprintf("status %d", statusCode), func(t *testing.T) {
+			runURL := testSorifyRunURL94
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-type", "application/json")
+				w.WriteHeader(statusCode)
+				_, _ = fmt.Fprintf(w, `{"run_id":94,"run_url":%q,"status":"completed"}`, runURL)
+			}))
+			defer server.Close()
+
+			btn, gotStatus, err := triggerSorifyRun(server.URL, testHTTPClient())
+			if err != nil {
+				t.Fatalf("triggerSorifyRun() unexpected error: %v", err)
+			}
+			if gotStatus != statusCode {
+				t.Errorf("statusCode = %d, want %d", gotStatus, statusCode)
+			}
+			if btn.Title != sorifyRunStartedTitle {
+				t.Errorf("btn.Title = %q, want %q", btn.Title, sorifyRunStartedTitle)
+			}
+			if btn.URL != runURL {
+				t.Errorf("btn.URL = %q, want %q", btn.URL, runURL)
+			}
+			if btn.Style != actionStylePositive {
+				t.Errorf("btn.Style = %q, want %q (green)", btn.Style, actionStylePositive)
+			}
+		})
+	}
+}
+
+func TestTriggerSorifyRun_ConflictAndRateLimited(t *testing.T) {
+	tests := []struct {
+		name       string
+		statusCode int
+		body       string
+		wantTitle  string
+	}{
+		{
+			name:       "conflict 409",
+			statusCode: http.StatusConflict,
+			body:       `{"message":"A run triggered via this webhook is already in progress.","run_id":97,"run_url":%q,"status_url":"http://localhost:8000/sorify/webhooks/whk_x/runs/97/status"}`,
+			wantTitle:  sorifyRunningTitle,
+		},
+		{
+			name:       "rate limited 429 with run_url",
+			statusCode: http.StatusTooManyRequests,
+			body:       `{"message":"Too many webhook trigger requests.","run_id":98,"run_url":%q}`,
+			wantTitle:  sorifyRateLimitedTitle,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runURL := fmt.Sprintf("http://localhost:8000/sorify/runs/%d", tt.statusCode)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-type", "application/json")
+				w.WriteHeader(tt.statusCode)
+				_, _ = fmt.Fprintf(w, tt.body, runURL)
+			}))
+			defer server.Close()
+
+			btn, statusCode, err := triggerSorifyRun(server.URL, testHTTPClient())
+			if err != nil {
+				t.Fatalf("triggerSorifyRun() unexpected error: %v", err)
+			}
+			if statusCode != tt.statusCode {
+				t.Errorf("statusCode = %d, want %d", statusCode, tt.statusCode)
+			}
+			if btn.Title != tt.wantTitle {
+				t.Errorf("btn.Title = %q, want %q", btn.Title, tt.wantTitle)
+			}
+			if btn.URL != runURL {
+				t.Errorf("btn.URL = %q, want %q", btn.URL, runURL)
+			}
+			if btn.Style != "" {
+				t.Errorf("btn.Style = %q, want %q (default/neutral for %d)", btn.Style, "", tt.statusCode)
+			}
+		})
+	}
+}
+
+func TestTriggerSorifyRun_TooManyRequests429_NoRunURL(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(http.StatusConflict) // 409
-		_, _ = fmt.Fprintf(w, `{"message":"A run triggered via this webhook is already in progress.","run_id":97,"run_url":%q,"status_url":"http://localhost:8000/sorify/webhooks/whk_x/runs/97/status"}`, runURL)
+		w.WriteHeader(http.StatusTooManyRequests) // 429, empty body
 	}))
 	defer server.Close()
 
@@ -389,17 +473,42 @@ func TestTriggerSorifyRun_Conflict409(t *testing.T) {
 	if err != nil {
 		t.Fatalf("triggerSorifyRun() unexpected error: %v", err)
 	}
-	if statusCode != http.StatusConflict {
-		t.Errorf("statusCode = %d, want %d", statusCode, http.StatusConflict)
+	if statusCode != http.StatusTooManyRequests {
+		t.Errorf("statusCode = %d, want %d", statusCode, http.StatusTooManyRequests)
 	}
-	if btn.Title != sorifyRunningTitle {
-		t.Errorf("btn.Title = %q, want %q", btn.Title, sorifyRunningTitle)
+	if btn.Title != sorifyRateLimitedTitle {
+		t.Errorf("btn.Title = %q, want %q", btn.Title, sorifyRateLimitedTitle)
 	}
-	if btn.URL != runURL {
-		t.Errorf("btn.URL = %q, want %q", btn.URL, runURL)
+	if btn.URL != server.URL {
+		t.Errorf("btn.URL = %q, want trigger URL %q", btn.URL, server.URL)
 	}
 	if btn.Style != "" {
-		t.Errorf("btn.Style = %q, want %q (default/neutral for 409)", btn.Style, "")
+		t.Errorf("btn.Style = %q, want %q (default/neutral for 429)", btn.Style, "")
+	}
+}
+
+func TestNotifyTeamsForSorify(t *testing.T) {
+	tests := []struct {
+		name       string
+		statusCode int
+		err        error
+		want       bool
+	}{
+		{name: "run started 202", statusCode: http.StatusAccepted, err: nil, want: true},
+		{name: "run started 200", statusCode: http.StatusOK, err: nil, want: true},
+		{name: "run started 201", statusCode: http.StatusCreated, err: nil, want: true},
+		{name: "redirect 302 is not a run start", statusCode: http.StatusFound, err: nil, want: false},
+		{name: "trigger failed network error", statusCode: 0, err: fmt.Errorf("call sorify trigger: boom"), want: true},
+		{name: "trigger failed unexpected status", statusCode: http.StatusInternalServerError, err: fmt.Errorf("sorify trigger unexpected status 500"), want: true},
+		{name: "already running 409", statusCode: http.StatusConflict, err: nil, want: false},
+		{name: "rate limited 429", statusCode: http.StatusTooManyRequests, err: nil, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := notifyTeamsForSorify(tt.statusCode, tt.err); got != tt.want {
+				t.Errorf("notifyTeamsForSorify(%d, %v) = %v, want %v", tt.statusCode, tt.err, got, tt.want)
+			}
+		})
 	}
 }
 
