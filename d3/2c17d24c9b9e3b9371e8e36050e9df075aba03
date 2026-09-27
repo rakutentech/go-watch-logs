@@ -1,0 +1,52 @@
+README.md
+  h_f44dfe84a46cdf 107
+pkg/msteams.go
+  s_191b6a36c19fe3::t_14039f5ab53a26 168-169,172-173,201-212
+  s_191b6a36c19fe3::t_2e256ae2a4c8d6 213
+  h_f44dfe84a46cdf 21-26,157-164
+  h_f44dfe84a46cdf 166,223-224,231
+pkg/msteams_test.go
+  h_f44dfe84a46cdf 490-497,501-511
+  s_1916770bd12dc9::t_cccad404ef7cd4 445
+  s_191b6a36c19fe3::t_c6fa60c5eba554 380-382,385,412,415-444,446-462
+  s_191b6a36c19fe3::t_df04685f8d3d99 398-399,463-466,468,476-477,479-480,482-483,486,489,498-499
+  s_191b6a36c19fe3::t_247c7c1482dcfe 379
+  s_191b6a36c19fe3::t_52858e0c21acd3 383-384
+  s_191b6a36c19fe3::t_ccdfdb71518760 386-388,395-397
+  s_191b6a36c19fe3::t_990aeb998d9278 400-402,409-411
+  s_191b6a36c19fe3::t_9edacbf1a66e24 413-414
+  s_191b6a36c19fe3::t_486fec32dc12f7 487-488
+  h_f44dfe84a46cdf 389-394,403-408,500
+pkg/notify.go
+  h_f44dfe84a46cdf 124-127,134-136
+  h_f44dfe84a46cdf 128,130,137,154
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d32c17d24c9b9e3b9371e8e36050e9df075aba03",
+  "prompts": {},
+  "humans": {
+    "h_f44dfe84a46cdf": {
+      "author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_1916770bd12dc9": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f64da0ac8ffeP6m28bmK0S9pLo",
+        "model": "GLM-5.3-Coding"
+      },
+      "human_author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    },
+    "s_191b6a36c19fe3": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f648388ffffew4T916lPp0p0ye",
+        "model": "GLM-5.3-Coding"
+      },
+      "human_author": "Pulkit Kathuria <kevincobain2000@gmail.com>"
+    }
+  }
+}
