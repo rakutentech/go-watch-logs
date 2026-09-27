@@ -18,11 +18,12 @@ type Details struct {
 }
 
 const (
-	actionTypeOpenURL          = "Action.OpenUrl"
-	actionStylePositive        = "positive"
-	sorifyRunStartedTitle      = "Sorify run started"
-	sorifyRunningTitle         = "Sorify running"
-	sorifyTriggerFailedTitle   = "Sorify trigger failed"
+	actionTypeOpenURL        = "Action.OpenUrl"
+	actionStylePositive      = "positive"
+	sorifyRunStartedTitle    = "Sorify run started"
+	sorifyRunningTitle       = "Sorify running"
+	sorifyTriggerFailedTitle = "Sorify trigger failed"
+	sorifyRateLimitedTitle   = "Sorify rate limited"
 )
 
 type teamsCard struct {
@@ -153,13 +154,23 @@ type sorifyTriggerResponse struct {
 	StatusURL string `json:"status_url,omitempty"`
 }
 
+// notifyTeamsForSorify reports whether an MS Teams message should be sent for a
+// Sorify trigger outcome. Teams is notified when a run started (any 2xx status)
+// or when the trigger failed (any error); "Sorify running" (409) and "Sorify rate
+// limited" (429) outcomes are skipped to avoid duplicate notifications.
+func notifyTeamsForSorify(statusCode int, err error) bool {
+	return err != nil || (statusCode >= 200 && statusCode < 300)
+}
+
 // triggerSorifyRun POSTs to the trigger URL and builds an MS Teams button from the response.
-//   - 202 -> "Sorify run started" button (positive/green) pointing at run_url
+//   - 2xx (e.g. 202) -> "Sorify run started" button (positive/green) pointing at run_url
 //   - 409 -> "Sorify running" button (default/neutral) pointing at run_url
+//   - 429 -> "Sorify rate limited" button (default/neutral) pointing at run_url when
+//     present in the response, otherwise at the trigger URL
 //
 // Returns the HTTP status code, a button, and an error. The error is non-nil for
-// any status code other than 202/409, network failure, malformed body, or when
-// run_url is missing. On a network failure the status code is 0.
+// any status code other than 2xx/409/429, network failure, malformed body, or
+// when run_url is missing. On a network failure the status code is 0.
 // The trigger URL is POSTed verbatim (query params like ?test_ids=1,2,3 are
 // preserved); run_url from the response is used verbatim.
 //
@@ -187,6 +198,19 @@ func triggerSorifyRun(triggerURL string, httpClient *http.Client) (teamsAction, 
 	slog.Info("Sorify trigger response", "statusCode", resp.StatusCode)
 	slog.Debug("sorify trigger response body", "body", string(body))
 
+	if resp.StatusCode == http.StatusTooManyRequests { // 429
+		btnURL := triggerURL
+		var sr sorifyTriggerResponse
+		if json.Unmarshal(body, &sr) == nil && sr.RunURL != "" {
+			btnURL = sr.RunURL
+		}
+		return teamsAction{
+			Type:  actionTypeOpenURL,
+			Title: sorifyRateLimitedTitle,
+			URL:   btnURL,
+		}, resp.StatusCode, nil
+	}
+
 	var sr sorifyTriggerResponse
 	if err := json.Unmarshal(body, &sr); err != nil {
 		return teamsAction{}, resp.StatusCode, fmt.Errorf("parse sorify trigger response (status %d, body %q): %w", resp.StatusCode, string(body), err)
@@ -196,15 +220,15 @@ func triggerSorifyRun(triggerURL string, httpClient *http.Client) (teamsAction, 
 		return teamsAction{}, resp.StatusCode, fmt.Errorf("sorify trigger response missing run_url (status %d, body %q)", resp.StatusCode, string(body))
 	}
 
-	switch resp.StatusCode {
-	case http.StatusAccepted: // 202
+	switch {
+	case resp.StatusCode >= 200 && resp.StatusCode < 300: // 2xx, e.g. 202
 		return teamsAction{
 			Type:  actionTypeOpenURL,
 			Title: sorifyRunStartedTitle,
 			URL:   sr.RunURL,
 			Style: actionStylePositive,
 		}, resp.StatusCode, nil
-	case http.StatusConflict: // 409
+	case resp.StatusCode == http.StatusConflict: // 409
 		return teamsAction{
 			Type:  actionTypeOpenURL,
 			Title: sorifyRunningTitle,
